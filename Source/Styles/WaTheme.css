@@ -1,0 +1,42 @@
+/* EmojiSurvivors theme — overrides Web Awesome tokens with the spooky palette.
+   Loads after webawesome.css so these win. Scoped to html.es-theme. */
+.es-theme {
+  --wa-color-brand-95: #efe9ff;
+  --wa-color-brand-90: #ddd0ff;
+  --wa-color-brand-80: #c3acff;
+  --wa-color-brand-70: #a988ff;
+  --wa-color-brand-60: #9b6cff;
+  --wa-color-brand-50: var(--arcane);
+  --wa-color-brand-40: #7a4fe0;
+  --wa-color-brand-30: #5c33b0;
+  --wa-color-brand-20: #3f2080;
+  --wa-color-brand-10: #281452;
+  --wa-color-brand-05: #180c33;
+  --wa-color-brand: var(--arcane);
+  --wa-color-brand-on: #fff;
+  --wa-color-brand-on-loud: #fff;
+  --wa-color-brand-fill-loud: var(--arcane);
+  --wa-color-brand-fill-quiet: var(--panel-2);
+
+  --wa-color-surface-default: var(--panel);
+  --wa-color-surface-raised: var(--panel-2);
+  --wa-color-surface-lowered: var(--bg2);
+  --wa-color-surface-border: var(--line);
+  --wa-color-text-normal: var(--bone);
+  --wa-color-text-quiet: var(--muted);
+  --wa-color-text-link: var(--arcane-lt);
+
+  --wa-color-success-fill-loud: var(--good);
+  --wa-color-warning-fill-loud: var(--gold);
+  --wa-color-danger-fill-loud: var(--bad);
+  --wa-color-danger-on-loud: #fff;
+
+  --wa-font-family-body: var(--font);
+  --wa-font-family-heading: var(--font-display);
+  --wa-border-radius-m: var(--radius);
+
+  /* FA duotone defaults — bone primary, arcane secondary on dark chrome. */
+  --fa-primary-color: var(--bone);
+  --fa-secondary-color: var(--arcane);
+  --fa-secondary-opacity: 0.55;
+}

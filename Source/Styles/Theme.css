@@ -1,0 +1,44 @@
+:root {
+  --bg: #0e0b14;
+  --bg2: #161020;
+  --panel: #1b1426;
+  --panel-2: #241a33;
+  --bone: #ece9e0;
+  --ink: #0b0810;
+  --muted: #9a8fb0;
+  --line: #3a2d52;
+  --arcane: #9b6cff;
+  --arcane-lt: #b89bff;
+  --arcane-dk: #6a3fd0;
+  --blood: #c0354a;
+  --toxic: #74e04a;
+  --gold: #e8c14a;
+  --hp: #c0354a;
+  --xp: #46a6ff;
+  --good: #74e04a;
+  --bad: #c0354a;
+  --shadow: 0 6px 28px rgba(0, 0, 0, 0.6);
+  --radius: 10px;
+  --tap: 44px;
+  --font:
+    "Trebuchet MS", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-display: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+}
+body {
+  background: var(--bg);
+  color: var(--bone);
+  font-family: var(--font);
+}
+.muted {
+  color: var(--muted);
+}
+.good {
+  color: var(--good);
+}
+.bad {
+  color: var(--bad);
+}
+.gold {
+  color: var(--gold);
+}

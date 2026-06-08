@@ -1,0 +1,7 @@
+# Font Awesome Pro registry auth — needed ONLY to re-vendor Web Awesome / FA.
+# Copy to .npmrc (gitignored) and fill the token before `npm install`.
+# The vendored Source/Vendor/{WebAwesome,FontAwesome} is committed, so day-to-day
+# work never needs this.
+@awesome.me:registry=https://registry.fontawesome.com/
+@fortawesome:registry=https://registry.fontawesome.com/
+//registry.fontawesome.com/:_authToken=YOUR_FA_PRO_TOKEN_HERE

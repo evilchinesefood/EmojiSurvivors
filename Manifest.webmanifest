@@ -1,0 +1,31 @@
+{
+  "name": "EmojiSurvivors",
+  "short_name": "EmojiSurvivors",
+  "description": "A spooky emoji bullet-heaven roguelite. Survive the swarm, build your loadout, slay the boss.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0e0b14",
+  "theme_color": "#0e0b14",
+  "icons": [
+    {
+      "src": "./Source/Assets/Icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "./Source/Assets/Icon192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "./Source/Assets/Icon512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

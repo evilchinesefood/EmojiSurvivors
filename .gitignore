@@ -1,0 +1,18 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Node (only used as a test runner; no deps expected)
+node_modules/
+
+# OMC orchestration state (not part of the game)
+.omc/
+
+# Font Awesome / Web Awesome private registry auth (never commit)
+.npmrc

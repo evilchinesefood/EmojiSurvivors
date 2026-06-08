@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" class="wa-theme-default wa-palette-default es-theme">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0e0b14" />
+    <title>EmojiSurvivors</title>
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="./Source/Assets/Icon192.png"
+    />
+    <link rel="apple-touch-icon" href="./Source/Assets/Icon192.png" />
+    <link rel="manifest" href="./Manifest.webmanifest" />
+    <!-- Web Awesome v3.7.0 (vendored, buildless) -->
+    <link
+      rel="stylesheet"
+      href="./Source/Vendor/WebAwesome/styles/webawesome.css"
+    />
+    <script
+      type="module"
+      src="./Source/Vendor/WebAwesome/webawesome.loader.js"
+      data-webawesome="./Source/Vendor/WebAwesome/"
+    ></script>
+    <!-- Font Awesome Pro Duotone (vendored webfonts) -->
+    <link
+      rel="stylesheet"
+      href="./Source/Vendor/FontAwesome/css/fontawesome.css"
+    />
+    <link rel="stylesheet" href="./Source/Vendor/FontAwesome/css/duotone.css" />
+    <!-- Palette first, then theme overrides consume it -->
+    <link rel="stylesheet" href="./Source/Styles/Theme.css" />
+    <link rel="stylesheet" href="./Source/Styles/Reset.css" />
+    <link rel="stylesheet" href="./Source/Styles/WaTheme.css" />
+    <link rel="stylesheet" href="./Source/Styles/Canvas.css" />
+    <link rel="stylesheet" href="./Source/Styles/Layout.css" />
+    <link rel="stylesheet" href="./Source/Styles/Hud.css" />
+  </head>
+  <body>
+    <canvas id="Game"></canvas>
+    <div id="Hud" class="hud" hidden></div>
+    <div id="Overlay" class="overlay-layer"></div>
+    <script type="module" src="./Source/Main.js"></script>
+  </body>
+</html>
