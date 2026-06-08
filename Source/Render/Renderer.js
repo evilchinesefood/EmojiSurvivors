@@ -106,9 +106,16 @@ export function makeRenderer(ctx) {
     background(cam) {
       grid(cam);
     },
-    render(state, cam) {
+    render(state, cam, shake) {
       grid(cam);
-      entities(state, cam);
+      if (shake && (shake.x || shake.y)) {
+        ctx.save();
+        ctx.translate(shake.x, shake.y);
+        entities(state, cam);
+        ctx.restore();
+      } else {
+        entities(state, cam);
+      }
     },
   };
 }

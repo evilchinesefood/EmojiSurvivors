@@ -6,6 +6,8 @@ import { createRunState } from "./Engine/State.js";
 import { stepSim, createLoop } from "./Engine/GameLoop.js";
 import { makeCamera } from "./World/Camera.js";
 import { makeRenderer } from "./Render/Renderer.js";
+import { makeParticles } from "./Render/Particles.js";
+import { makeFx } from "./Render/Fx.js";
 import { makeInput } from "./Input/Input.js";
 import { makeHud } from "./UI/Hud.js";
 import { makeShell } from "./UI/Shell.js";
@@ -16,6 +18,7 @@ import { PauseScreen } from "./UI/PauseScreen.js";
 import { LevelUpScreen } from "./UI/LevelUpScreen.js";
 import { ResultScreen } from "./UI/ResultScreen.js";
 import { ShopScreen } from "./UI/ShopScreen.js";
+import { SettingsScreen } from "./UI/SettingsScreen.js";
 import { levelUpChoices, applyChoice } from "./Systems/Leveling.js";
 import { makeSfx } from "./Audio/Sfx.js";
 import { makeMeta } from "./Meta/Meta.js";
@@ -54,6 +57,8 @@ let state = null;
 let selectedCharId = STARTER_ID;
 let lastSummary = { time: 0, kills: 0, level: 1, coins: 0 };
 const renderer = makeRenderer(ctx);
+const particles = makeParticles();
+const fx = makeFx();
 const hud = makeHud(hudRoot, { onPause });
 const sfx = makeSfx(() => meta.settings.sfx);
 
@@ -70,8 +75,49 @@ const input = makeInput({
 addEventListener("pointerdown", () => sfx.unlock(), { passive: true });
 addEventListener("keydown", () => sfx.unlock());
 
-function drainEvents() {
-  for (const ev of state.events) sfx.play(ev.type);
+// Route drained sim events to audio + particles + screen FX.
+function handleEvents() {
+  const p = state.player;
+  const shakeOn = meta.settings.shake;
+  for (const ev of state.events) {
+    sfx.play(ev.type);
+    switch (ev.type) {
+      case "damage":
+        if (meta.settings.damageNumbers && Math.random() < 0.5)
+          particles.text(ev.x, ev.y - 12, String(ev.amount), "#fff");
+        break;
+      case "kill":
+        particles.puff(
+          ev.x,
+          ev.y,
+          ev.boss || ev.elite ? "#e8c14a" : "rgba(184,160,210,0.9)",
+          ev.boss ? 22 : ev.elite ? 12 : 6,
+          ev.boss ? 7 : 4,
+        );
+        if (ev.boss && shakeOn) fx.shake(0.8);
+        break;
+      case "hurt":
+        fx.hurt(shakeOn);
+        break;
+      case "levelup":
+        particles.ring(p.x, p.y, "#e8c14a");
+        break;
+      case "evolve":
+        particles.ring(p.x, p.y, "#9b6cff");
+        particles.spark(p.x, p.y, "#b89bff", 22, 220);
+        break;
+      case "explode":
+        particles.spark(ev.x, ev.y, "rgba(255,140,60,0.95)", 12, 220);
+        if (shakeOn) fx.shake(0.18);
+        break;
+      case "boss":
+        if (shakeOn) fx.shake(0.7);
+        break;
+      case "victory":
+        particles.ring(p.x, p.y, "#e8c14a");
+        break;
+    }
+  }
   state.events.length = 0;
 }
 
@@ -145,7 +191,7 @@ const screens = {
       meta,
       onPlay: () => machine.set(S.SELECT),
       onShop: () => machine.set(S.SHOP),
-      onSettings: () => {},
+      onSettings: () => machine.set(S.SETTINGS),
     }),
   [S.SHOP]: () =>
     ShopScreen({
@@ -153,6 +199,8 @@ const screens = {
       onBack: () => machine.set(S.MENU),
       refresh: () => shell.render(),
     }),
+  [S.SETTINGS]: () =>
+    SettingsScreen({ meta, onBack: () => machine.set(S.MENU) }),
   [S.SELECT]: () =>
     SelectScreen({
       meta,
@@ -214,6 +262,9 @@ const loop = createLoop(
     if (machine.is(S.PLAYING)) {
       state.input.move = input.getIntent(camera, state.player);
       stepSim(state, dt);
+      handleEvents();
+      fx.update(dt);
+      particles.update(dt);
       if (state.outcome) endRun();
       else if (state.awaitingLevelUp) machine.set(S.LEVELUP);
     }
@@ -221,8 +272,13 @@ const loop = createLoop(
   () => {
     if (state) {
       camera.follow(state.player.x, state.player.y);
-      renderer.render(state, camera);
-      drainEvents();
+      const sh = fx.offset();
+      renderer.render(state, camera, sh);
+      ctx.save();
+      ctx.translate(sh.x, sh.y);
+      particles.draw(ctx, camera);
+      ctx.restore();
+      fx.drawVignette(ctx, camera.w, camera.h);
       hud.update(state, trayItems());
     } else {
       renderer.background(camera);
