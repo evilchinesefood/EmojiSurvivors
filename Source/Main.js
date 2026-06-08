@@ -11,6 +11,8 @@ import { makeHud } from "./UI/Hud.js";
 import { makeShell } from "./UI/Shell.js";
 import { MenuScreen } from "./UI/MenuScreen.js";
 import { PauseScreen } from "./UI/PauseScreen.js";
+import { LevelUpScreen } from "./UI/LevelUpScreen.js";
+import { levelUpChoices, applyChoice } from "./Systems/Leveling.js";
 import { CHARACTERS, STARTER_ID } from "./Content/Characters.js";
 import { WEAPONS } from "./Content/Weapons.js";
 import { PASSIVES } from "./Content/Passives.js";
@@ -107,6 +109,12 @@ function quitToMenu() {
   machine.set(S.MENU);
 }
 
+function pickChoice(c) {
+  applyChoice(state, c);
+  if (state.awaitingLevelUp) shell.render();
+  else machine.set(S.PLAYING);
+}
+
 const screens = {
   [S.MENU]: () =>
     MenuScreen({
@@ -117,15 +125,29 @@ const screens = {
     }),
   [S.PAUSED]: () =>
     PauseScreen({ onResume: resume, onRestart: restart, onQuit: quitToMenu }),
+  [S.LEVELUP]: () =>
+    LevelUpScreen({
+      count: state.pendingLevelUps,
+      choices: levelUpChoices(state),
+      rerollsLeft: state.rerollsLeft,
+      onPick: pickChoice,
+      onReroll: () => {
+        if (state.rerollsLeft > 0) {
+          state.rerollsLeft -= 1;
+          shell.render();
+        }
+      },
+    }),
 };
 
-makeShell({ overlay, hud, machine, screens });
+const shell = makeShell({ overlay, hud, machine, screens });
 
 const loop = createLoop(
   (dt) => {
     if (machine.is(S.PLAYING)) {
       state.input.move = input.getIntent(camera, state.player);
       stepSim(state, dt);
+      if (state.awaitingLevelUp) machine.set(S.LEVELUP);
     }
   },
   () => {

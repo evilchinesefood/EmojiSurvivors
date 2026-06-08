@@ -10,5 +10,8 @@ import "./Movement.Test.js";
 import "./SpatialHash.Test.js";
 import "./Spawner.Test.js";
 import "./Combat.Test.js";
+import "./Pickup.Test.js";
+import "./Leveling.Test.js";
+import "./Evolutions.Test.js";
 
 run(process.argv[2]);

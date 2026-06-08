@@ -8,10 +8,10 @@
 import { PASSIVES } from "../Content/Passives.js";
 import { POWER_GRID } from "../Content/PowerGrid.js";
 
-export const BASE_SPEED = 158; // px/s at speedMul 1
-export const BASE_MAXHP = 100;
-export const BASE_MAGNET = 92; // px vacuum radius at magnet 1
-export const BASE_PICKUP = 28; // px direct-collect radius
+export const BASE_SPEED = 160; // px/s at speedMul 1
+export const BASE_MAXHP = 110;
+export const BASE_MAGNET = 120; // px vacuum radius at magnet 1
+export const BASE_PICKUP = 30; // px direct-collect radius
 
 function base() {
   return {

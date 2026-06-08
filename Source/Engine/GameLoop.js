@@ -10,6 +10,8 @@ import { movePlayer, stepEnemies } from "../Systems/Movement.js";
 import { stepSpawner } from "../Systems/Spawner.js";
 import { stepWeapons } from "../Systems/WeaponSystem.js";
 import { stepCombat } from "../Systems/CombatSystem.js";
+import { stepPickups } from "../Systems/PickupSystem.js";
+import { stepLeveling } from "../Systems/Leveling.js";
 
 export const STEP = 1 / 60;
 const MAX_FRAME = 0.25;
@@ -30,6 +32,8 @@ export function stepSim(state, dt) {
   rebuildHash(state); // refresh AFTER moves + spawns so combat queries are accurate
   stepWeapons(state, dt);
   stepCombat(state, dt);
+  stepPickups(state, dt);
+  stepLeveling(state);
   if (state.stats.recovery > 0 && p.hp < p.maxHp) {
     p.hp = Math.min(p.maxHp, p.hp + state.stats.recovery * dt);
   }

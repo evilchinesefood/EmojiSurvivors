@@ -4,7 +4,7 @@
 // single sweep that drops loot, banks kills, and fires victory on a boss death.
 import { swapPop, emit } from "../Engine/State.js";
 
-const IFRAME = 0.5;
+const IFRAME = 0.6;
 
 function heal(state, amt) {
   const p = state.player;
@@ -66,6 +66,8 @@ function dropLoot(state, e) {
   }
   if (!e.elite && state.spawnRng.chance(0.012))
     state.drops.push({ x: e.x, y: e.y, kind: "health", emoji: "🍖", size: 22 });
+  if (!e.elite && state.spawnRng.chance(0.0025))
+    state.drops.push({ x: e.x, y: e.y, kind: "magnet", emoji: "🧲", size: 22 });
   if (e.dropsChest)
     state.drops.push({ x: e.x, y: e.y, kind: "chest", emoji: "🎁", size: 26 });
 }
