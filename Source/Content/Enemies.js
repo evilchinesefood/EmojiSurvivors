@@ -1,0 +1,90 @@
+// Enemy tiers (emoji sprites). `unlockAt` gates a tier into the weighted spawn pool
+// over the run; base stats are multiplied by the difficulty curve's scale knobs at
+// spawn time. Ogre is an ELITE — spawned on its own timer (not the normal pool) and
+// always drops a chest.
+export const ENEMIES = {
+  wisp: {
+    id: "wisp",
+    name: "Wisp",
+    emoji: "👻",
+    size: 24,
+    hp: 8,
+    speed: 70,
+    dmg: 6,
+    xp: 1,
+    coinChance: 0.02,
+    unlockAt: 0,
+    weight: 10,
+  },
+  bat: {
+    id: "bat",
+    name: "Bat",
+    emoji: "🦇",
+    size: 22,
+    hp: 5,
+    speed: 96,
+    dmg: 5,
+    xp: 1,
+    coinChance: 0.02,
+    unlockAt: 25,
+    weight: 9,
+  },
+  zombie: {
+    id: "zombie",
+    name: "Zombie",
+    emoji: "🧟",
+    size: 28,
+    hp: 26,
+    speed: 44,
+    dmg: 10,
+    xp: 2,
+    coinChance: 0.03,
+    unlockAt: 60,
+    weight: 7,
+  },
+  skeleton: {
+    id: "skeleton",
+    name: "Skeleton",
+    emoji: "💀",
+    size: 25,
+    hp: 16,
+    speed: 64,
+    dmg: 9,
+    xp: 2,
+    coinChance: 0.03,
+    unlockAt: 110,
+    weight: 7,
+  },
+  spider: {
+    id: "spider",
+    name: "Spider",
+    emoji: "🕷️",
+    size: 23,
+    hp: 13,
+    speed: 108,
+    dmg: 8,
+    xp: 2,
+    coinChance: 0.03,
+    unlockAt: 175,
+    weight: 6,
+  },
+  ogre: {
+    id: "ogre",
+    name: "Ogre",
+    emoji: "👹",
+    size: 44,
+    hp: 240,
+    speed: 40,
+    dmg: 18,
+    xp: 14,
+    coinChance: 1,
+    elite: true,
+    dropsChest: true,
+    unlockAt: 80,
+  },
+};
+
+export const ENEMY_IDS = Object.keys(ENEMIES);
+// Normal (non-elite) tiers, used by the weighted spawn pool.
+export const NORMAL_TIERS = ENEMY_IDS.filter((id) => !ENEMIES[id].elite);
+export const ELITE_ID = "ogre";

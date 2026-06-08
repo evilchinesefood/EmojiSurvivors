@@ -12,6 +12,8 @@ import { makeShell } from "./UI/Shell.js";
 import { MenuScreen } from "./UI/MenuScreen.js";
 import { PauseScreen } from "./UI/PauseScreen.js";
 import { CHARACTERS, STARTER_ID } from "./Content/Characters.js";
+import { WEAPONS } from "./Content/Weapons.js";
+import { PASSIVES } from "./Content/Passives.js";
 
 if ("serviceWorker" in navigator) {
   addEventListener("load", () =>
@@ -60,7 +62,23 @@ const input = makeInput({
 });
 
 function trayItems() {
-  return []; // weapon/passive tray lands in M2.
+  if (!state) return [];
+  const items = [];
+  for (const w of state.player.weapons) {
+    const def = WEAPONS[w.id];
+    if (def)
+      items.push({ emoji: def.emoji, level: w.level, evolved: !!def.evolved });
+  }
+  for (const id in state.player.passives) {
+    const pd = PASSIVES[id];
+    if (pd)
+      items.push({
+        emoji: pd.emoji,
+        level: state.player.passives[id],
+        evolved: false,
+      });
+  }
+  return items;
 }
 
 function startRun(characterId, runLength) {
