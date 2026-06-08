@@ -9,7 +9,10 @@ export function makeParticles() {
   const ps = [];
 
   function add(p) {
-    if (ps.length >= MAX) ps.shift();
+    if (ps.length >= MAX) {
+      ps[0] = ps[ps.length - 1]; // O(1) drop-oldest (unordered draw, order irrelevant)
+      ps.pop();
+    }
     ps.push(p);
   }
 

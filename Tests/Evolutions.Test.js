@@ -6,6 +6,7 @@ import {
 } from "../Source/Systems/Evolutions.js";
 import { levelUpChoices } from "../Source/Systems/Leveling.js";
 import { CHARACTERS } from "../Source/Content/Characters.js";
+import { MAX_WEAPON_LEVEL } from "../Source/Content/Weapons.js";
 
 function run() {
   // Mage starts with Magic Bolt → Bolt Storm via Spell Focus.
@@ -21,13 +22,13 @@ describe("Evolutions", () => {
   it("is not eligible before max level + passive", () => {
     const s = run();
     expect(eligibleEvolutions(s).length).toBe(0);
-    s.player.weapons[0].level = 8;
+    s.player.weapons[0].level = MAX_WEAPON_LEVEL;
     expect(eligibleEvolutions(s).length).toBe(0); // still missing passive
   });
 
   it("is eligible at L8 holding the required passive", () => {
     const s = run();
-    s.player.weapons[0].level = 8;
+    s.player.weapons[0].level = MAX_WEAPON_LEVEL;
     s.player.passives.spellFocus = 1;
     const evos = eligibleEvolutions(s);
     expect(evos.length).toBe(1);
@@ -36,16 +37,16 @@ describe("Evolutions", () => {
 
   it("applying an evolution swaps the weapon in place", () => {
     const s = run();
-    s.player.weapons[0].level = 8;
+    s.player.weapons[0].level = MAX_WEAPON_LEVEL;
     s.player.passives.spellFocus = 1;
     applyEvolution(s, eligibleEvolutions(s)[0]);
     expect(s.player.weapons[0].id).toBe("boltStorm");
-    expect(s.player.weapons[0].level).toBe(8);
+    expect(s.player.weapons[0].level).toBe(MAX_WEAPON_LEVEL);
   });
 
   it("surfaces as a level-up choice when eligible", () => {
     const s = run();
-    s.player.weapons[0].level = 8;
+    s.player.weapons[0].level = MAX_WEAPON_LEVEL;
     s.player.passives.spellFocus = 1;
     const hasEvo = levelUpChoices(s).some((c) => c.kind === "evolution");
     expect(hasEvo).toBeTruthy();

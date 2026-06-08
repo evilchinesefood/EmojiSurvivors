@@ -263,11 +263,12 @@ const loop = createLoop(
       state.input.move = input.getIntent(camera, state.player);
       stepSim(state, dt);
       handleEvents();
-      fx.update(dt);
       particles.update(dt);
       if (state.outcome) endRun();
       else if (state.awaitingLevelUp) machine.set(S.LEVELUP);
     }
+    // Decay shake every frame (even paused/overlay) so frozen frames settle.
+    fx.update(dt);
   },
   () => {
     if (state) {

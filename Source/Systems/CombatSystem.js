@@ -53,7 +53,7 @@ function spawnGem(state, x, y, value) {
 
 function dropLoot(state, e) {
   spawnGem(state, e.x, e.y, e.xp);
-  if (e.coinChance && state.spawnRng.chance(e.coinChance)) {
+  if (e.coinChance && state.rollRng.chance(e.coinChance)) {
     state.coins.push({
       x: e.x,
       y: e.y,
@@ -65,9 +65,9 @@ function dropLoot(state, e) {
       size: 15,
     });
   }
-  if (!e.elite && state.spawnRng.chance(0.012))
+  if (!e.elite && state.rollRng.chance(0.012))
     state.drops.push({ x: e.x, y: e.y, kind: "health", emoji: "🍖", size: 22 });
-  if (!e.elite && state.spawnRng.chance(0.0025))
+  if (!e.elite && state.rollRng.chance(0.0025))
     state.drops.push({ x: e.x, y: e.y, kind: "magnet", emoji: "🧲", size: 22 });
   if (e.dropsChest)
     state.drops.push({ x: e.x, y: e.y, kind: "chest", emoji: "🎁", size: 26 });
@@ -140,13 +140,13 @@ export function stepCombat(state, dt) {
         state.hash.queryCircle(pr.x, pr.y, pr.r + 28, near);
         for (let j = 0; j < near.length; j++) {
           const e = near[j];
-          if (e.dead || pr.hitIds.has(e)) continue;
+          if (e.dead || pr.hitIds.has(e.uid)) continue;
           const reach = e.size * 0.5 + pr.r;
           const ex = e.x - pr.x;
           const ey = e.y - pr.y;
           if (ex * ex + ey * ey <= reach * reach) {
             hurt(state, e, pr.damage);
-            pr.hitIds.add(e);
+            pr.hitIds.add(e.uid);
             if (!e.boss) {
               const kl = Math.hypot(pr.vx, pr.vy) || 1;
               e.knockX += (pr.vx / kl) * 55;

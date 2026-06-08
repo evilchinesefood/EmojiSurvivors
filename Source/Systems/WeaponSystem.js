@@ -104,11 +104,10 @@ function lobTarget(state, p) {
 function fire(state, w, def, sc, stats, dm) {
   const p = state.player;
   const dmg = sc.damage * dm;
-  const ranged =
-    def.behavior === "aimed" ||
-    def.behavior === "spread" ||
-    def.behavior === "nova";
-  const count = sc.count + (ranged ? stats.projCount : 0);
+  // projCount (Bracer) adds extra projectiles/sweeps/lobs to every count-based
+  // behavior; the persistent zone weapons (orbit/aura) scale by level only.
+  const zone = def.behavior === "orbit" || def.behavior === "aura";
+  const count = sc.count + (zone ? 0 : stats.projCount);
   const pierce = sc.pierce;
   const speed = (def.speed || 0) * stats.projSpeed;
   const area = stats.area * sc.area;
@@ -139,7 +138,7 @@ function fire(state, w, def, sc, stats, dm) {
           pierce,
           def.emoji,
           18,
-          1.7,
+          1.7 * stats.duration,
           def.id,
           def.lifesteal,
         );
@@ -161,7 +160,7 @@ function fire(state, w, def, sc, stats, dm) {
           pierce,
           def.emoji,
           16,
-          1.5,
+          1.5 * stats.duration,
           def.id,
           0,
         );
@@ -182,7 +181,7 @@ function fire(state, w, def, sc, stats, dm) {
           pierce,
           def.emoji,
           18,
-          1.9,
+          1.9 * stats.duration,
           def.id,
           0,
         );
@@ -248,7 +247,8 @@ function fire(state, w, def, sc, stats, dm) {
 }
 
 function ensureOrbits(state, w, def, sc, stats, dm) {
-  const desired = sc.count;
+  // Echo Stone (duration) adds orbs — the orbit weapon's "more" payoff.
+  const desired = sc.count + Math.floor((stats.duration - 1) * 4);
   const radius = def.radius * stats.area * sc.area;
   let mine = 0;
   for (const o of state.orbits) if (o.w === w) mine++;

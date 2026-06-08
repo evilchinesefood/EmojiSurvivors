@@ -16,8 +16,10 @@ function rebuild(s) {
   s.hash.clear();
   for (const e of s.enemies) s.hash.insert(e);
 }
+let _uid = 0;
 function makeEnemy(over = {}) {
   return {
+    uid: ++_uid,
     kind: "wisp",
     emoji: "👻",
     size: 24,

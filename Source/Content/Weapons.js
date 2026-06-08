@@ -203,17 +203,19 @@ export const WEAPONS = {
 export const WEAPON_IDS = Object.keys(WEAPONS);
 // New-weapon pool offered at level-up (base, non-evolved only).
 export const BASE_WEAPON_IDS = WEAPON_IDS.filter((id) => !WEAPONS[id].evolved);
-export const MAX_WEAPON_LEVEL = 8;
+// Max level is 5 (not the genre-traditional 8): a focused build reaches it in a
+// normal run, so evolutions actually fire. Scaling is steeper to compensate.
+export const MAX_WEAPON_LEVEL = 5;
 
 // Level scaling (pre-stat). count grows every `countEvery` levels by `countStep`.
 export function scaleWeapon(def, level) {
   const l = level - 1;
   return {
-    damage: def.damage * (1 + 0.26 * l),
-    interval: def.cooldown * Math.pow(0.95, l),
+    damage: def.damage * (1 + 0.3 * l),
+    interval: def.cooldown * Math.pow(0.94, l),
     count:
       def.count + Math.floor(l / (def.countEvery || 3)) * (def.countStep || 1),
     pierce: def.pierce + Math.floor(l / 3),
-    area: (def.area || 1) * (1 + 0.08 * l),
+    area: (def.area || 1) * (1 + 0.09 * l),
   };
 }

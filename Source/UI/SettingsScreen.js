@@ -16,14 +16,14 @@ export function SettingsScreen(ctx) {
   );
 
   const shake = h("wa-switch", s.shake ? { checked: true } : {});
-  const onShake = () => ctx.meta.setSetting("shake", shake.checked);
-  shake.addEventListener("change", onShake);
-  shake.addEventListener("wa-change", onShake);
+  shake.addEventListener("change", () =>
+    ctx.meta.setSetting("shake", shake.checked),
+  );
 
   const dmg = h("wa-switch", s.damageNumbers ? { checked: true } : {});
-  const onDmg = () => ctx.meta.setSetting("damageNumbers", dmg.checked);
-  dmg.addEventListener("change", onDmg);
-  dmg.addEventListener("wa-change", onDmg);
+  dmg.addEventListener("change", () =>
+    ctx.meta.setSetting("damageNumbers", dmg.checked),
+  );
 
   const row = (ic, label, control) =>
     h(

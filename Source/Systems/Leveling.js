@@ -136,8 +136,10 @@ export function levelUpChoices(state) {
   }
 
   const want =
-    3 + (state.rollRng.next() < Math.min(0.5, (luck - 1) * 0.4) ? 1 : 0);
-  const chosen = forced.slice(0, want);
+    3 + (state.rollRng.next() < Math.min(0.5, 0.05 + (luck - 1) * 0.4) ? 1 : 0);
+  // Show evolutions first, but never let them crowd out every normal upgrade —
+  // always reserve at least one slot for the weighted pool / reroll to act on.
+  const chosen = forced.slice(0, Math.max(1, want - 1));
   while (chosen.length < want && cand.length)
     chosen.push(weightedTake(state.rollRng, cand));
   let fi = 0;

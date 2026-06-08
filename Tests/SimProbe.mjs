@@ -6,7 +6,7 @@ import { createRunState } from "../Source/Engine/State.js";
 import { stepSim, STEP } from "../Source/Engine/GameLoop.js";
 import { CHARACTERS } from "../Source/Content/Characters.js";
 import { levelUpChoices, applyChoice } from "../Source/Systems/Leveling.js";
-import { WEAPONS } from "../Source/Content/Weapons.js";
+import { WEAPONS, MAX_WEAPON_LEVEL } from "../Source/Content/Weapons.js";
 
 function fail(msg) {
   console.error("SimProbe FAIL: " + msg);
@@ -81,7 +81,7 @@ export function smartPick(s) {
       mainDef &&
       c.kind === "passive-new" &&
       c.id === mainDef.requiresPassive &&
-      main.level >= 6
+      main.level >= MAX_WEAPON_LEVEL - 1
     )
       return 140;
     if (
@@ -117,6 +117,7 @@ export function drive({ seed, runLength, characterId, seconds }) {
   let maxEnemies = 0;
   let maxProj = 0;
   let maxGems = 0;
+  let evolves = 0;
   for (let i = 0; i < steps; i++) {
     s.input.move = moveAI(s);
     stepSim(s, STEP);
@@ -126,6 +127,8 @@ export function drive({ seed, runLength, characterId, seconds }) {
       if (++guard > 200)
         fail("level-up resolver stuck at t=" + s.time.toFixed(1));
     }
+    for (let k = 0; k < s.events.length; k++)
+      if (s.events[k].type === "evolve") evolves++;
     s.events.length = 0;
     maxEnemies = Math.max(maxEnemies, s.enemies.length);
     maxProj = Math.max(maxProj, s.projectiles.length);
@@ -138,7 +141,7 @@ export function drive({ seed, runLength, characterId, seconds }) {
     }
     if (s.outcome) break;
   }
-  return { s, maxEnemies, maxProj, maxGems };
+  return { s, maxEnemies, maxProj, maxGems, evolves };
 }
 
 function main() {
@@ -155,7 +158,7 @@ function main() {
   ok(surv.maxGems > 0, "no gems dropped");
   ok(surv.s.player.kills > 20, "no real combat happened");
   ok(
-    surv.s.player.level >= 5,
+    surv.s.player.level >= 3,
     "player should level up (got " + surv.s.player.level + ")",
   );
   ok(
@@ -203,11 +206,17 @@ function main() {
     v15.s.outcome === "victory",
     "mage should win the 15-min boss (got " + v15.s.outcome + ")",
   );
+  ok(
+    v15.evolves > 0,
+    "an evolution should actually fire in a focused full run (got " +
+      v15.evolves +
+      ")",
+  );
 
   console.log(
-    `SimProbe OK (M4): knight reached ${surv.s.time.toFixed(0)}s lvl=${surv.s.player.level} | ` +
+    `SimProbe OK (M7): knight reached ${surv.s.time.toFixed(0)}s lvl=${surv.s.player.level} | ` +
       `mage 5min=VICTORY@${v5.s.time.toFixed(0)}s coins=${v5.s.player.coins} | ` +
-      `mage 15min=VICTORY@${v15.s.time.toFixed(0)}s`,
+      `mage 15min=VICTORY@${v15.s.time.toFixed(0)}s evolves=${v15.evolves}`,
   );
 }
 

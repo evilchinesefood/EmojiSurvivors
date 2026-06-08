@@ -69,6 +69,7 @@ export function createRunState({ seed, runLength, character, powerGrid = {} }) {
     awaitingLevelUp: false,
     pendingLevelUps: 0,
     rerollsLeft: stats.rerolls,
+    entitySeq: 0, // monotonic id for pooled enemies (projectile hit-tracking)
     outcome: null, // 'victory' | 'gameover'
     spawn: {
       timer: 0.4,

@@ -16,6 +16,7 @@ export function spawnBoss(state) {
   const p = state.player;
   const a = state.spawnRng.angle();
   const e = state.pool.enemy.acquire();
+  e.uid = ++state.entitySeq;
   e.kind = def.id;
   e.name = def.name;
   e.emoji = def.emoji;
@@ -48,6 +49,7 @@ export function spawnBoss(state) {
 
 export function spawnEnemy(state, def, x, y, d) {
   const e = state.pool.enemy.acquire();
+  e.uid = ++state.entitySeq;
   e.kind = def.id;
   e.emoji = def.emoji;
   e.size = def.size;
