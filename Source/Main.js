@@ -10,6 +10,8 @@ import { makeInput } from "./Input/Input.js";
 import { makeHud } from "./UI/Hud.js";
 import { makeShell } from "./UI/Shell.js";
 import { MenuScreen } from "./UI/MenuScreen.js";
+import { SelectScreen } from "./UI/SelectScreen.js";
+import { ConfigScreen } from "./UI/ConfigScreen.js";
 import { PauseScreen } from "./UI/PauseScreen.js";
 import { LevelUpScreen } from "./UI/LevelUpScreen.js";
 import { ResultScreen } from "./UI/ResultScreen.js";
@@ -53,6 +55,7 @@ const meta = {
 };
 
 let state = null;
+let selectedCharId = STARTER_ID;
 let lastSummary = { time: 0, kills: 0, level: 1, coins: 0 };
 const renderer = makeRenderer(ctx);
 const hud = makeHud(hudRoot, { onPause });
@@ -152,9 +155,24 @@ const screens = {
   [S.MENU]: () =>
     MenuScreen({
       meta,
-      onPlay: () => startRun(STARTER_ID, 300),
+      onPlay: () => machine.set(S.SELECT),
       onShop: () => {},
       onSettings: () => {},
+    }),
+  [S.SELECT]: () =>
+    SelectScreen({
+      meta,
+      onSelect: (id) => {
+        selectedCharId = id;
+        machine.set(S.CONFIG);
+      },
+      onBack: () => machine.set(S.MENU),
+    }),
+  [S.CONFIG]: () =>
+    ConfigScreen({
+      character: selectedCharId,
+      onStart: (len) => startRun(selectedCharId, len),
+      onBack: () => machine.set(S.SELECT),
     }),
   [S.PAUSED]: () =>
     PauseScreen({ onResume: resume, onRestart: restart, onQuit: quitToMenu }),
