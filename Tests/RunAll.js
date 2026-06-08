@@ -13,5 +13,6 @@ import "./Combat.Test.js";
 import "./Pickup.Test.js";
 import "./Leveling.Test.js";
 import "./Evolutions.Test.js";
+import "./Boss.Test.js";
 
 run(process.argv[2]);

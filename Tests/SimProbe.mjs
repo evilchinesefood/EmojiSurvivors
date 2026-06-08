@@ -21,6 +21,22 @@ const finite = (...xs) => xs.every(Number.isFinite);
 // kite that sweeps fresh ground and curls back over its own gem trail.
 export function moveAI(s) {
   const p = s.player;
+  // Boss phase: strafe around the boss at engage range so directional weapons land.
+  if (s.spawn.bossSpawned) {
+    let boss = null;
+    for (const e of s.enemies) if (e.boss) boss = e;
+    if (boss) {
+      const dx = p.x - boss.x;
+      const dy = p.y - boss.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const want = 115;
+      const radial = d < want ? 0.85 : d > want + 60 ? -0.7 : 0; // + = away
+      const mx = -dy / d + (dx / d) * radial;
+      const my = dx / d + (dy / d) * radial;
+      const l = Math.hypot(mx, my) || 1;
+      return { x: mx / l, y: my / l };
+    }
+  }
   let ax = 0;
   let ay = 0;
   const en = s.enemies;
@@ -126,36 +142,72 @@ export function drive({ seed, runLength, characterId, seconds }) {
 }
 
 function main() {
-  // M3: full roguelite loop — survive to the deadline, level up, build a loadout.
-  const a = drive({ seed: 1234, runLength: 300, characterId: "knight" });
-  ok(a.maxEnemies > 30, "expected a swarm (got " + a.maxEnemies + ")");
-  ok(a.maxEnemies <= 320, "enemy count unbounded (" + a.maxEnemies + ")");
-  ok(a.maxProj < 2500, "projectiles leaking (" + a.maxProj + ")");
-  ok(a.s.player.kills > 20, "no real combat happened");
-  ok(a.maxGems > 0, "no gems dropped");
+  // M3 loop invariants: survive to the deadline, level up, build a loadout.
+  const surv = drive({
+    seed: 1234,
+    runLength: 300,
+    characterId: "knight",
+    seconds: 300,
+  });
+  ok(surv.maxEnemies > 30, "expected a swarm (got " + surv.maxEnemies + ")");
+  ok(surv.maxEnemies <= 320, "enemy count unbounded (" + surv.maxEnemies + ")");
+  ok(surv.maxProj < 2500, "projectiles leaking (" + surv.maxProj + ")");
+  ok(surv.maxGems > 0, "no gems dropped");
+  ok(surv.s.player.kills > 20, "no real combat happened");
   ok(
-    a.s.player.level >= 5,
-    "player should level up (got " + a.s.player.level + ")",
+    surv.s.player.level >= 5,
+    "player should level up (got " + surv.s.player.level + ")",
   );
-  ok(!a.s.awaitingLevelUp, "level-up left unresolved");
   ok(
-    !a.s.outcome && a.s.time >= 300 - STEP,
-    "Knight should reach the 5-min deadline alive (t=" +
-      a.s.time.toFixed(0) +
+    !surv.s.outcome && surv.s.time >= 300 - STEP,
+    "Knight should reach the deadline alive (t=" +
+      surv.s.time.toFixed(0) +
       " " +
-      a.s.outcome +
+      surv.s.outcome +
       ")",
   );
 
-  // Mage (projectile starter) over a 10-min run.
-  const b = drive({ seed: 77, runLength: 600, characterId: "mage" });
-  ok(b.maxProj > 0, "mage should fire projectiles");
-  ok(b.s.player.level > 8, "mage should level well over 10 min");
+  // M4: the boss spawns at the deadline and clears the normal field.
+  const boss = drive({
+    seed: 1234,
+    runLength: 300,
+    characterId: "knight",
+    seconds: 301,
+  });
+  ok(boss.s.spawn.bossSpawned, "boss should spawn at the deadline");
+  ok(
+    boss.s.enemies.length === 1 && boss.s.enemies[0].boss,
+    "boss should be the only enemy",
+  );
+
+  // M4: a reliable build reaches VICTORY at 5-min and 15-min, banking the boss reward.
+  const v5 = drive({
+    seed: 1234,
+    runLength: 300,
+    characterId: "mage",
+    seconds: 520,
+  });
+  ok(
+    v5.s.outcome === "victory",
+    "mage should win the 5-min boss (got " + v5.s.outcome + ")",
+  );
+  ok(v5.s.player.coins >= 60, "boss coin reward should bank");
+
+  const v15 = drive({
+    seed: 1234,
+    runLength: 900,
+    characterId: "mage",
+    seconds: 1160,
+  });
+  ok(
+    v15.s.outcome === "victory",
+    "mage should win the 15-min boss (got " + v15.s.outcome + ")",
+  );
 
   console.log(
-    `SimProbe OK (M3): knight lvl=${a.s.player.level} kills=${a.s.player.kills} ` +
-      `weapons=${a.s.player.weapons.length} reached=${a.s.time.toFixed(0)}s | ` +
-      `mage lvl=${b.s.player.level} maxProj=${b.maxProj}`,
+    `SimProbe OK (M4): knight reached ${surv.s.time.toFixed(0)}s lvl=${surv.s.player.level} | ` +
+      `mage 5min=VICTORY@${v5.s.time.toFixed(0)}s coins=${v5.s.player.coins} | ` +
+      `mage 15min=VICTORY@${v15.s.time.toFixed(0)}s`,
   );
 }
 

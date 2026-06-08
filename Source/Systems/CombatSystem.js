@@ -12,6 +12,7 @@ function heal(state, amt) {
 }
 
 function knockFrom(e, x, y, force = 50) {
+  if (e.boss) return;
   const dx = e.x - x;
   const dy = e.y - y;
   const d = Math.hypot(dx, dy) || 1;
@@ -146,9 +147,11 @@ export function stepCombat(state, dt) {
           if (ex * ex + ey * ey <= reach * reach) {
             hurt(state, e, pr.damage);
             pr.hitIds.add(e);
-            const kl = Math.hypot(pr.vx, pr.vy) || 1;
-            e.knockX += (pr.vx / kl) * 55;
-            e.knockY += (pr.vy / kl) * 55;
+            if (!e.boss) {
+              const kl = Math.hypot(pr.vx, pr.vy) || 1;
+              e.knockX += (pr.vx / kl) * 55;
+              e.knockY += (pr.vy / kl) * 55;
+            }
             if (pr.lifesteal) heal(state, pr.damage * pr.lifesteal);
             if (--pr.pierce < 0) {
               remove = true;
@@ -236,11 +239,15 @@ export function stepCombat(state, dt) {
     const e = en[i];
     if (!e.dead) continue;
     p.kills += 1;
-    dropLoot(state, e);
-    emit(state, "kill", { x: e.x, y: e.y, elite: e.elite, boss: e.boss });
     if (e.boss) {
+      p.coins += e.coinReward || 0;
+      state.spawn.bossAlive = false;
       state.outcome = "victory";
+      emit(state, "kill", { x: e.x, y: e.y, boss: true });
       emit(state, "victory");
+    } else {
+      dropLoot(state, e);
+      emit(state, "kill", { x: e.x, y: e.y, elite: e.elite });
     }
     state.pool.enemy.release(e);
     swapPop(en, i);

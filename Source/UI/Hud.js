@@ -33,6 +33,16 @@ export function makeHud(root, { onPause }) {
   );
 
   const tray = h("div", { class: "hud-tray" });
+
+  const bossName = h("div", { class: "boss-name" }, "");
+  const bossFill = h("div", { class: "bar-fill" });
+  const bossWrap = h(
+    "div",
+    { class: "hud-boss", hidden: true },
+    bossName,
+    h("div", { class: "bar bar-boss" }, bossFill),
+  );
+
   const pauseBtn = h(
     "button",
     { class: "hud-pause", "aria-label": "Pause" },
@@ -41,7 +51,7 @@ export function makeHud(root, { onPause }) {
   pauseBtn.addEventListener("click", () => onPause?.());
 
   clear(root);
-  root.append(top, bars, tray, pauseBtn);
+  root.append(top, bars, tray, bossWrap, pauseBtn);
 
   let traySig = "";
 
@@ -55,6 +65,21 @@ export function makeHud(root, { onPause }) {
     hpLabel.textContent = Math.ceil(p.hp) + " / " + p.maxHp;
     const xpPct = Math.max(0, Math.min(1, p.xp / p.xpNext));
     xpFill.style.transform = "scaleX(" + xpPct + ")";
+
+    let boss = null;
+    for (let i = 0; i < state.enemies.length; i++)
+      if (state.enemies[i].boss) {
+        boss = state.enemies[i];
+        break;
+      }
+    if (boss) {
+      bossWrap.hidden = false;
+      bossName.textContent = boss.name || "Boss";
+      bossFill.style.transform =
+        "scaleX(" + Math.max(0, boss.hp / boss.maxHp) + ")";
+    } else {
+      bossWrap.hidden = true;
+    }
 
     const sig = trayItems
       .map((i) => i.emoji + i.level + (i.evolved ? "*" : ""))

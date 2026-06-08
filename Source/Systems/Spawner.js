@@ -4,8 +4,47 @@
 // pooled. Spawns happen on a ring just outside a typical viewport.
 import { difficulty } from "../Content/Curve.js";
 import { ENEMIES, NORMAL_TIERS, ELITE_ID } from "../Content/Enemies.js";
+import { bossFor } from "../Content/Bosses.js";
+import { emit } from "../Engine/State.js";
 
 const SPAWN_R = 660;
+
+export function spawnBoss(state) {
+  for (const e of state.enemies) state.pool.enemy.release(e);
+  state.enemies.length = 0;
+  const def = bossFor(state.runLength);
+  const p = state.player;
+  const a = state.spawnRng.angle();
+  const e = state.pool.enemy.acquire();
+  e.kind = def.id;
+  e.name = def.name;
+  e.emoji = def.emoji;
+  e.size = def.size;
+  e.elite = false;
+  e.dropsChest = false;
+  e.boss = true;
+  e.bossId = def.id;
+  e.maxHp = def.hp;
+  e.hp = def.hp;
+  e.speed = def.speed;
+  e.dmg = def.dmg;
+  e.xp = 0;
+  e.coinChance = 0;
+  e.coinReward = def.coinReward;
+  e.x = p.x + Math.cos(a) * 520;
+  e.y = p.y + Math.sin(a) * 520;
+  e.vx = 0;
+  e.vy = 0;
+  e.flash = 0;
+  e.knockX = 0;
+  e.knockY = 0;
+  e.dead = false;
+  e.hitTimers = {};
+  state.enemies.push(e);
+  state.spawn.bossSpawned = true;
+  state.spawn.bossAlive = true;
+  emit(state, "boss");
+}
 
 export function spawnEnemy(state, def, x, y, d) {
   const e = state.pool.enemy.acquire();
@@ -73,6 +112,10 @@ function spawnWave(state, t, d) {
 
 export function stepSpawner(state, dt) {
   if (state.spawn.bossSpawned) return; // boss phase clears normal spawns
+  if (state.time >= state.runLength) {
+    spawnBoss(state);
+    return;
+  }
   const t = state.time;
   const d = difficulty(t);
   const sp = state.spawn;

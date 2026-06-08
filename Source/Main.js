@@ -12,7 +12,9 @@ import { makeShell } from "./UI/Shell.js";
 import { MenuScreen } from "./UI/MenuScreen.js";
 import { PauseScreen } from "./UI/PauseScreen.js";
 import { LevelUpScreen } from "./UI/LevelUpScreen.js";
+import { ResultScreen } from "./UI/ResultScreen.js";
 import { levelUpChoices, applyChoice } from "./Systems/Leveling.js";
+import { makeSfx } from "./Audio/Sfx.js";
 import { CHARACTERS, STARTER_ID } from "./Content/Characters.js";
 import { WEAPONS } from "./Content/Weapons.js";
 import { PASSIVES } from "./Content/Passives.js";
@@ -51,8 +53,10 @@ const meta = {
 };
 
 let state = null;
+let lastSummary = { time: 0, kills: 0, level: 1, coins: 0 };
 const renderer = makeRenderer(ctx);
 const hud = makeHud(hudRoot, { onPause });
+const sfx = makeSfx(() => meta.settings.sfx);
 
 const input = makeInput({
   canvas,
@@ -62,6 +66,15 @@ const input = makeInput({
     else if (machine.is(S.PAUSED)) resume();
   },
 });
+
+// Unlock/resume the AudioContext on the first user gesture (autoplay policy).
+addEventListener("pointerdown", () => sfx.unlock(), { passive: true });
+addEventListener("keydown", () => sfx.unlock());
+
+function drainEvents() {
+  for (const ev of state.events) sfx.play(ev.type);
+  state.events.length = 0;
+}
 
 function trayItems() {
   if (!state) return [];
@@ -109,6 +122,26 @@ function quitToMenu() {
   machine.set(S.MENU);
 }
 
+function endRun() {
+  const won = state.outcome === "victory";
+  meta.coins += state.player.coins;
+  const key = state.runLength;
+  if (
+    won &&
+    (!meta.bestTimes[key] ||
+      state.time < meta.bestTimes[key] ||
+      meta.bestTimes[key] === 0)
+  )
+    meta.bestTimes[key] = state.time;
+  lastSummary = {
+    time: state.time,
+    kills: state.player.kills,
+    level: state.player.level,
+    coins: state.player.coins,
+  };
+  machine.set(won ? S.VICTORY : S.GAMEOVER);
+}
+
 function pickChoice(c) {
   applyChoice(state, c);
   if (state.awaitingLevelUp) shell.render();
@@ -138,6 +171,22 @@ const screens = {
         }
       },
     }),
+  [S.VICTORY]: () =>
+    ResultScreen({
+      victory: true,
+      summary: lastSummary,
+      onShop: quitToMenu,
+      onRetry: restart,
+      onMenu: quitToMenu,
+    }),
+  [S.GAMEOVER]: () =>
+    ResultScreen({
+      victory: false,
+      summary: lastSummary,
+      onShop: quitToMenu,
+      onRetry: restart,
+      onMenu: quitToMenu,
+    }),
 };
 
 const shell = makeShell({ overlay, hud, machine, screens });
@@ -147,13 +196,15 @@ const loop = createLoop(
     if (machine.is(S.PLAYING)) {
       state.input.move = input.getIntent(camera, state.player);
       stepSim(state, dt);
-      if (state.awaitingLevelUp) machine.set(S.LEVELUP);
+      if (state.outcome) endRun();
+      else if (state.awaitingLevelUp) machine.set(S.LEVELUP);
     }
   },
   () => {
     if (state) {
       camera.follow(state.player.x, state.player.y);
       renderer.render(state, camera);
+      drainEvents();
       hud.update(state, trayItems());
     } else {
       renderer.background(camera);
