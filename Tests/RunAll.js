@@ -3,5 +3,9 @@
 import { run } from "./Runner.js";
 
 import "./Smoke.Test.js";
+import "./Rng.Test.js";
+import "./StatsModel.Test.js";
+import "./Curve.Test.js";
+import "./Movement.Test.js";
 
 run(process.argv[2]);
