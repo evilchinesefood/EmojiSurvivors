@@ -15,8 +15,10 @@ import { ConfigScreen } from "./UI/ConfigScreen.js";
 import { PauseScreen } from "./UI/PauseScreen.js";
 import { LevelUpScreen } from "./UI/LevelUpScreen.js";
 import { ResultScreen } from "./UI/ResultScreen.js";
+import { ShopScreen } from "./UI/ShopScreen.js";
 import { levelUpChoices, applyChoice } from "./Systems/Leveling.js";
 import { makeSfx } from "./Audio/Sfx.js";
+import { makeMeta } from "./Meta/Meta.js";
 import { CHARACTERS, STARTER_ID } from "./Content/Characters.js";
 import { WEAPONS } from "./Content/Weapons.js";
 import { PASSIVES } from "./Content/Passives.js";
@@ -45,14 +47,8 @@ resize();
 
 const machine = makeMachine(S.BOOT);
 
-// M1 inline meta default — Meta/Save lands in M6.
-const meta = {
-  coins: 0,
-  unlocked: [STARTER_ID],
-  powerGrid: {},
-  bestTimes: {},
-  settings: { sfx: 0.6, shake: true, damageNumbers: true },
-};
+// Persistent account state (coins, unlocks, power grid, best times, settings).
+const meta = makeMeta(globalThis.localStorage);
 
 let state = null;
 let selectedCharId = STARTER_ID;
@@ -127,15 +123,7 @@ function quitToMenu() {
 
 function endRun() {
   const won = state.outcome === "victory";
-  meta.coins += state.player.coins;
-  const key = state.runLength;
-  if (
-    won &&
-    (!meta.bestTimes[key] ||
-      state.time < meta.bestTimes[key] ||
-      meta.bestTimes[key] === 0)
-  )
-    meta.bestTimes[key] = state.time;
+  meta.bankRun(state.runLength, state.player.coins, state.time);
   lastSummary = {
     time: state.time,
     kills: state.player.kills,
@@ -156,8 +144,14 @@ const screens = {
     MenuScreen({
       meta,
       onPlay: () => machine.set(S.SELECT),
-      onShop: () => {},
+      onShop: () => machine.set(S.SHOP),
       onSettings: () => {},
+    }),
+  [S.SHOP]: () =>
+    ShopScreen({
+      meta,
+      onBack: () => machine.set(S.MENU),
+      refresh: () => shell.render(),
     }),
   [S.SELECT]: () =>
     SelectScreen({
@@ -193,7 +187,10 @@ const screens = {
     ResultScreen({
       victory: true,
       summary: lastSummary,
-      onShop: quitToMenu,
+      onShop: () => {
+        state = null;
+        machine.set(S.SHOP);
+      },
       onRetry: restart,
       onMenu: quitToMenu,
     }),
@@ -201,7 +198,10 @@ const screens = {
     ResultScreen({
       victory: false,
       summary: lastSummary,
-      onShop: quitToMenu,
+      onShop: () => {
+        state = null;
+        machine.set(S.SHOP);
+      },
       onRetry: restart,
       onMenu: quitToMenu,
     }),
