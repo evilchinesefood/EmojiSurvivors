@@ -73,9 +73,9 @@
 }
 .choice-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.9rem;
-  width: min(820px, 94vw);
+  width: min(900px, 94vw);
 }
 .pick-card {
   pointer-events: auto;
@@ -242,8 +242,13 @@ wa-button i.fa-duotone {
 /* Level-up overlay: keep it centered (default), just push the choice cards clear of
    the title — they used to touch/overlap. Responsive so it doesn't over-push on short
    mobile screens. */
+.screen.levelup {
+  /* center when it fits; fall back to top + scroll when 4 cards overflow a short
+     screen (plain `center` overlapped the wrapped row instead of scrolling). */
+  justify-content: safe center;
+}
 .screen.levelup .choice-grid {
-  margin-top: clamp(48px, 8vh, 80px);
+  margin-top: clamp(40px, 7vh, 72px);
 }
 
 .es-range {

@@ -242,9 +242,10 @@ export function makeRenderer(ctx) {
       const breathe = 0.94 + 0.06 * Math.sin(state.time * 2);
       for (const av of state.auraViz) {
         const r = av.r * breathe;
-        const g = ctx.createRadialGradient(px, py, r * 0.25, px, py, r);
-        g.addColorStop(0, av.color + "0.13)");
-        g.addColorStop(0.7, av.color + "0.06)");
+        const g = ctx.createRadialGradient(px, py, r * 0.2, px, py, r);
+        g.addColorStop(0, av.color + "0.28)");
+        g.addColorStop(0.6, av.color + "0.18)");
+        g.addColorStop(0.9, av.color + "0.26)"); // soft brighter rim = readable zone edge
         g.addColorStop(1, av.color + "0)");
         ctx.fillStyle = g;
         ctx.beginPath();
@@ -262,8 +263,9 @@ export function makeRenderer(ctx) {
       const sx = cam.toScreenX(z.x);
       const sy = cam.toScreenY(z.y);
       const col = z.color || "rgba(155,108,255,";
-      const g = ctx.createRadialGradient(sx, sy, z.r * 0.15, sx, sy, z.r);
-      g.addColorStop(0, col + 0.2 * ease + ")");
+      const g = ctx.createRadialGradient(sx, sy, z.r * 0.12, sx, sy, z.r);
+      g.addColorStop(0, col + 0.36 * ease + ")");
+      g.addColorStop(0.55, col + 0.2 * ease + ")");
       g.addColorStop(1, col + "0)");
       ctx.fillStyle = g;
       ctx.beginPath();
