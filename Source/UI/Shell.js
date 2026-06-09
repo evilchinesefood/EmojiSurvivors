@@ -4,7 +4,9 @@
 import { mount } from "./Dom.js";
 import { S } from "../Engine/StateMachine.js";
 
-const HUD_STATES = new Set([S.PLAYING, S.PAUSED, S.LEVELUP]);
+// HUD shows in-run and behind the pause menu — but NOT during level-up, where its
+// powerup-icon tray would bleed through the dim overlay and collide with the cards.
+const HUD_STATES = new Set([S.PLAYING, S.PAUSED]);
 
 export function makeShell({ overlay, hud, machine, screens }) {
   function render() {

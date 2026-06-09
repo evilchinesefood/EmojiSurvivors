@@ -64,17 +64,14 @@ export function makeRenderer(ctx) {
       ctx.stroke();
     }
 
+    // Hit feedback is a brief emoji "pop" (size bump), NOT a backing disc — with a
+    // dense swarm, hundreds of overlapping translucent discs whited out the screen
+    // on every AoE pulse.
     for (const e of state.enemies) {
       if (!cam.inView(e.x, e.y, e.size + 12)) continue;
       const sx = cam.toScreenX(e.x);
       const sy = cam.toScreenY(e.y);
-      if (e.flash > 0) {
-        ctx.beginPath();
-        ctx.arc(sx, sy, e.size * 0.62, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,255,255,0.5)";
-        ctx.fill();
-      }
-      emoji(e.emoji, sx, sy, e.size);
+      emoji(e.emoji, sx, sy, e.flash > 0 ? e.size * 1.25 : e.size);
     }
 
     for (const o of state.orbits) {
