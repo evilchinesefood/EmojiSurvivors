@@ -3,7 +3,7 @@
 // fat elite on its own timer. Boss-at-deadline is layered on in M4. Enemies are
 // pooled. Spawns happen on a ring just outside a typical viewport.
 import { difficulty } from "../Content/Curve.js";
-import { ENEMIES, NORMAL_TIERS, ELITE_ID } from "../Content/Enemies.js";
+import { ENEMIES, NORMAL_TIERS, ELITE_IDS } from "../Content/Enemies.js";
 import { bossFor } from "../Content/Bosses.js";
 import { emit } from "../Engine/State.js";
 
@@ -141,12 +141,13 @@ export function stepSpawner(state, dt) {
     spawnWave(state, t, d);
   }
 
-  if (t >= ENEMIES[ELITE_ID].unlockAt) {
-    sp.eliteTimer -= dt;
-    if (sp.eliteTimer <= 0) {
-      sp.eliteTimer += 26;
+  for (const id of ELITE_IDS) {
+    if (t < ENEMIES[id].unlockAt) continue;
+    sp.eliteTimers[id] -= dt;
+    if (sp.eliteTimers[id] <= 0) {
+      sp.eliteTimers[id] += 26;
       const pt = ringPoint(state, p.x, p.y, SPAWN_R);
-      spawnEnemy(state, ENEMIES[ELITE_ID], pt.x, pt.y, d);
+      spawnEnemy(state, ENEMIES[id], pt.x, pt.y, d);
     }
   }
 }

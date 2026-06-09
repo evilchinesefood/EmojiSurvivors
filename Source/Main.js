@@ -256,16 +256,29 @@ const screens = {
       onBack: () => machine.set(S.SELECT),
     }),
   [S.PAUSED]: () =>
-    PauseScreen({ onResume: resume, onRestart: restart, onQuit: quitToMenu }),
+    PauseScreen({
+      state,
+      onResume: resume,
+      onRestart: restart,
+      onQuit: quitToMenu,
+    }),
   [S.LEVELUP]: () =>
     LevelUpScreen({
       count: state.pendingLevelUps,
       choices: levelUpChoices(state),
       rerollsLeft: state.rerollsLeft,
+      banishesLeft: state.banishesLeft,
       onPick: pickChoice,
       onReroll: () => {
         if (state.rerollsLeft > 0) {
           state.rerollsLeft -= 1;
+          shell.render();
+        }
+      },
+      onBanish: (c) => {
+        if (state.banishesLeft > 0 && c.id) {
+          state.banishedCards.add(c.id);
+          state.banishesLeft -= 1;
           shell.render();
         }
       },

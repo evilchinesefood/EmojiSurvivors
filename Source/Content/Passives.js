@@ -77,6 +77,14 @@ export const PASSIVES = {
       { stat: "greed", op: "mul", value: 1.06 },
     ],
   },
+  graveDust: {
+    id: "graveDust",
+    name: "Grave Dust",
+    emoji: "⚱️",
+    desc: "+8% might",
+    max: 5,
+    mods: [{ stat: "might", op: "mul", value: 1.08 }],
+  },
 };
 
 export const PASSIVE_IDS = Object.keys(PASSIVES);

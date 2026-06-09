@@ -330,6 +330,10 @@ export function stepWeapons(state, dt) {
       fire(state, w, def, sc, stats, dm);
       emit(state, "echo");
     }
+    if (state.gimmick === "bloodPact" && state.combatRng.chance(0.1)) {
+      const p = state.player;
+      p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.01);
+    }
   }
   updateOrbits(state);
 }

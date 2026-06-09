@@ -65,20 +65,23 @@ export function levelUpChoices(state) {
   const p = state.player;
   const luck = state.stats.luck;
   const cand = [];
+  const ban = state.banishedCards; // ids removed from this run's pool
 
   // Evolutions are forced to the front — rare and exciting, never buried.
-  const forced = eligibleEvolutions(state).map((evo) => ({
-    kind: "evolution",
-    id: evo.to,
-    evo,
-    emoji: WEAPONS[evo.to].emoji,
-    label: WEAPONS[evo.to].name,
-    desc: "Evolve " + WEAPONS[evo.from].name,
-  }));
+  const forced = eligibleEvolutions(state)
+    .filter((evo) => !ban.has(evo.to))
+    .map((evo) => ({
+      kind: "evolution",
+      id: evo.to,
+      evo,
+      emoji: WEAPONS[evo.to].emoji,
+      label: WEAPONS[evo.to].name,
+      desc: "Evolve " + WEAPONS[evo.from].name,
+    }));
 
   for (const w of p.weapons) {
     const def = WEAPONS[w.id];
-    if (def && w.level < MAX_WEAPON_LEVEL)
+    if (def && w.level < MAX_WEAPON_LEVEL && !ban.has(w.id))
       cand.push({
         kind: "weapon-up",
         id: w.id,
@@ -91,7 +94,7 @@ export function levelUpChoices(state) {
   }
   for (const id in p.passives) {
     const pd = PASSIVES[id];
-    if (pd && p.passives[id] < pd.max)
+    if (pd && p.passives[id] < pd.max && !ban.has(id))
       cand.push({
         kind: "passive-up",
         id,
@@ -106,7 +109,7 @@ export function levelUpChoices(state) {
       const owns = p.weapons.some(
         (w) => w.id === id || WEAPONS[id].evolvesTo === w.id,
       );
-      if (!owns) {
+      if (!owns && !ban.has(id)) {
         const def = WEAPONS[id];
         cand.push({
           kind: "weapon-new",
@@ -121,7 +124,7 @@ export function levelUpChoices(state) {
   }
   if (Object.keys(p.passives).length < PASSIVE_SLOTS) {
     for (const id of PASSIVE_IDS) {
-      if (!(id in p.passives)) {
+      if (!(id in p.passives) && !ban.has(id)) {
         const pd = PASSIVES[id];
         // Strongly surface the partner passive of any maxed weapon — it's the last
         // piece of that weapon's evolution, so a focused build can complete it.

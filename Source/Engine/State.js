@@ -70,12 +70,14 @@ export function createRunState({ seed, runLength, character, powerGrid = {} }) {
     awaitingLevelUp: false,
     pendingLevelUps: 0,
     rerollsLeft: stats.rerolls,
+    banishesLeft: 1, // remove an offered card from this run's pool
+    banishedCards: new Set(), // card ids banished for the rest of the run
     entitySeq: 0, // monotonic id for pooled enemies (projectile hit-tracking)
     outcome: null, // 'victory' | 'gameover'
     spawn: {
       timer: 0.8, // brief grace before the first trickle
       waveTimer: 12, // first ring wave a touch later, so the open is gentler
-      eliteTimer: 28,
+      eliteTimers: { ogre: 28, lich: 36 }, // staggered per-elite spawn timers
       bossSpawned: false,
       bossAlive: false,
     },

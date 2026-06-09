@@ -82,6 +82,23 @@ export const CHARACTERS = {
     gimmick: "rage",
     passive: { name: "Rage", emoji: "😤", desc: "+1% dmg per 1% missing HP" },
   },
+  necromancer: {
+    id: "necromancer",
+    name: "Necromancer",
+    emoji: "🧛",
+    weapon: "boneSpear",
+    blurb: "Glass cannon who feeds on the kill.",
+    tilt: [
+      { stat: "might", op: "mul", value: 1.15 },
+      { stat: "hpMul", op: "mul", value: 0.9 },
+    ],
+    gimmick: "bloodPact",
+    passive: {
+      name: "Blood Pact",
+      emoji: "🩸",
+      desc: "10% on attack: heal 1% max HP",
+    },
+  },
 };
 
 export const CHARACTER_IDS = Object.keys(CHARACTERS);

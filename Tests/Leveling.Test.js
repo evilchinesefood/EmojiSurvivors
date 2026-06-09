@@ -66,4 +66,17 @@ describe("Leveling", () => {
     stepLeveling(s);
     expect(s.player.hp > 10).toBeTruthy();
   });
+
+  it("banished card ids never appear in subsequent choices", () => {
+    const s = run();
+    s.banishedCards.add("daggers");
+    s.banishedCards.add("wings");
+    for (let i = 0; i < 30; i++) {
+      const ch = levelUpChoices(s);
+      expect(
+        ch.every((c) => c.id !== "daggers" && c.id !== "wings"),
+      ).toBeTruthy();
+      expect(ch.length >= 3).toBeTruthy();
+    }
+  });
 });

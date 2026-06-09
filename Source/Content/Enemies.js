@@ -68,6 +68,19 @@ export const ENEMIES = {
     unlockAt: 175,
     weight: 6,
   },
+  specter: {
+    id: "specter",
+    name: "Specter",
+    emoji: "👺",
+    size: 22,
+    hp: 18,
+    speed: 138,
+    dmg: 11,
+    xp: 6,
+    coinChance: 0.1,
+    unlockAt: 240,
+    weight: 5,
+  },
   ogre: {
     id: "ogre",
     name: "Ogre",
@@ -82,9 +95,24 @@ export const ENEMIES = {
     dropsChest: true,
     unlockAt: 80,
   },
+  lich: {
+    id: "lich",
+    name: "Lich",
+    emoji: "🧟‍♂️",
+    size: 38,
+    hp: 460,
+    speed: 54,
+    dmg: 22,
+    xp: 55,
+    coinChance: 1,
+    elite: true,
+    dropsChest: true,
+    unlockAt: 150,
+  },
 };
 
 export const ENEMY_IDS = Object.keys(ENEMIES);
 // Normal (non-elite) tiers, used by the weighted spawn pool.
 export const NORMAL_TIERS = ENEMY_IDS.filter((id) => !ENEMIES[id].elite);
-export const ELITE_ID = "ogre";
+// Elites spawn on their own staggered timers (not the weighted pool).
+export const ELITE_IDS = ENEMY_IDS.filter((id) => ENEMIES[id].elite);

@@ -29,6 +29,8 @@ export const ICONS = {
   hash: { name: "hashtag" },
   check: { name: "circle-check", primary: "var(--good)" },
   reroll: { name: "dice", primary: "var(--gold)" },
+  ban: { name: "ban", primary: "var(--bad)" },
+  records: { name: "chart-simple", primary: "var(--gold)" },
 };
 
 function styleFor(p, s) {
