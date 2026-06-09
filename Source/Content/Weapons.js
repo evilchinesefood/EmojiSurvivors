@@ -16,7 +16,7 @@ export const WEAPONS = {
     pierce: 999,
     area: 1,
     range: 140,
-    arc: 1.4,
+    arc: 1.5,
     countEvery: 3,
     evolvesTo: "bloodletter",
     requiresPassive: "hollowHeart",
@@ -117,7 +117,7 @@ export const WEAPONS = {
     pierce: 999,
     area: 1.3,
     range: 150,
-    arc: 1.3,
+    arc: 1.5,
     lifesteal: 0.06,
     countEvery: 3,
   },
@@ -203,8 +203,9 @@ export const WEAPONS = {
 export const WEAPON_IDS = Object.keys(WEAPONS);
 // New-weapon pool offered at level-up (base, non-evolved only).
 export const BASE_WEAPON_IDS = WEAPON_IDS.filter((id) => !WEAPONS[id].evolved);
-// Max level is 5 (not the genre-traditional 8): a focused build reaches it in a
-// normal run, so evolutions actually fire. Scaling is steeper to compensate.
+// Max level is 5 (not the genre-traditional 8): a focused build reaches it in a normal
+// run, so evolutions fire; the level-up pool also surfaces a maxed weapon's partner
+// passive ("unlocks evolution!") to complete the combo. Scaling is steeper to compensate.
 export const MAX_WEAPON_LEVEL = 5;
 
 // Level scaling (pre-stat). count grows every `countEvery` levels by `countStep`.

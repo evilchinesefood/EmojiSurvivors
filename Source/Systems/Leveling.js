@@ -86,7 +86,7 @@ export function levelUpChoices(state) {
         emoji: def.emoji,
         label: def.name + " ⮕ L" + (w.level + 1),
         desc: "Upgrade weapon",
-        weight: 10,
+        weight: 10 + w.level * 8,
       });
   }
   for (const id in p.passives) {
@@ -98,7 +98,7 @@ export function levelUpChoices(state) {
         emoji: pd.emoji,
         label: pd.name + " ⮕ L" + (p.passives[id] + 1),
         desc: pd.desc,
-        weight: 9,
+        weight: 14,
       });
   }
   if (p.weapons.length < WEAPON_SLOTS) {
@@ -123,13 +123,24 @@ export function levelUpChoices(state) {
     for (const id of PASSIVE_IDS) {
       if (!(id in p.passives)) {
         const pd = PASSIVES[id];
+        // Strongly surface the partner passive of any maxed weapon — it's the last
+        // piece of that weapon's evolution, so a focused build can complete it.
+        const completesEvo = p.weapons.some((w) => {
+          const d = WEAPONS[w.id];
+          return (
+            d &&
+            !d.evolved &&
+            d.requiresPassive === id &&
+            w.level >= MAX_WEAPON_LEVEL
+          );
+        });
         cand.push({
           kind: "passive-new",
           id,
           emoji: pd.emoji,
           label: pd.name,
-          desc: pd.desc,
-          weight: 11 * luck,
+          desc: completesEvo ? pd.desc + " — unlocks evolution!" : pd.desc,
+          weight: completesEvo ? 90 : 11 * luck,
         });
       }
     }

@@ -53,11 +53,11 @@ function spawnGem(state, x, y, value) {
 
 function dropLoot(state, e) {
   spawnGem(state, e.x, e.y, e.xp);
-  if (e.coinChance && state.rollRng.chance(e.coinChance)) {
+  if (e.coinChance && state.combatRng.chance(e.coinChance)) {
     state.coins.push({
       x: e.x,
       y: e.y,
-      value: e.elite ? 6 : 1,
+      value: e.elite ? 12 : 3,
       vx: 0,
       vy: 0,
       vacuum: false,
@@ -65,9 +65,9 @@ function dropLoot(state, e) {
       size: 15,
     });
   }
-  if (!e.elite && state.rollRng.chance(0.012))
+  if (!e.elite && state.combatRng.chance(0.012))
     state.drops.push({ x: e.x, y: e.y, kind: "health", emoji: "🍖", size: 22 });
-  if (!e.elite && state.rollRng.chance(0.0025))
+  if (!e.elite && state.combatRng.chance(0.0025))
     state.drops.push({ x: e.x, y: e.y, kind: "magnet", emoji: "🧲", size: 22 });
   if (e.dropsChest)
     state.drops.push({ x: e.x, y: e.y, kind: "chest", emoji: "🎁", size: 26 });

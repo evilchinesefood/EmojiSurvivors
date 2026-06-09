@@ -189,16 +189,24 @@ function fire(state, w, def, sc, stats, dm) {
       break;
     }
     case "whip": {
-      const sweeps = Math.max(1, count);
-      for (let i = 0; i < sweeps; i++) {
-        w.alt = (w.alt || 0) + 1;
-        let dx = p.facing.x;
-        let dy = p.facing.y;
-        if (i % 2 === 1 || (sweeps === 1 && w.alt % 2 === 0)) {
-          dx = -dx;
-          dy = -dy;
-        }
-        const range = def.range * area;
+      // A spinning lash: a 4-way CROSS around the player (front/back/both sides) so it
+      // hits chasers behind a kiting player AND a boss being strafed to the side, with
+      // great swarm coverage. projCount adds the diagonals.
+      const fx = p.facing.x;
+      const fy = p.facing.y;
+      const dirs = [
+        [fx, fy],
+        [-fx, -fy],
+        [-fy, fx],
+        [fy, -fx],
+      ];
+      if (count >= 2) {
+        const s = Math.SQRT1_2;
+        dirs.push([(fx - fy) * s, (fy + fx) * s]);
+        dirs.push([(fx + fy) * s, (fy - fx) * s]);
+      }
+      const range = def.range * area;
+      for (const [dx, dy] of dirs) {
         state.strikes.push({
           type: "cone",
           x: p.x,

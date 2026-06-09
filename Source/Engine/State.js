@@ -73,8 +73,8 @@ export function createRunState({ seed, runLength, character, powerGrid = {} }) {
     entitySeq: 0, // monotonic id for pooled enemies (projectile hit-tracking)
     outcome: null, // 'victory' | 'gameover'
     spawn: {
-      timer: 0.4,
-      waveTimer: 8,
+      timer: 0.8, // brief grace before the first trickle
+      waveTimer: 12, // first ring wave a touch later, so the open is gentler
       eliteTimer: 28,
       bossSpawned: false,
       bossAlive: false,

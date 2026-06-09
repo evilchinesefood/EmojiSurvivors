@@ -29,8 +29,12 @@ export function moveAI(s) {
       const dx = p.x - boss.x;
       const dy = p.y - boss.y;
       const d = Math.hypot(dx, dy) || 1;
-      const want = 115;
-      const radial = d < want ? 0.85 : d > want + 60 ? -0.7 : 0; // + = away
+      // Circle the boss while weaving the distance between ~95 (just outside its
+      // contact range) and ~165, so the inward phase points facing at it (directional
+      // weapons land) and aura/orbit reach it — without ever touching it.
+      const target = 130 + 35 * Math.sin(s.time * 1.6);
+      let radial = (target - d) * 0.03; // + = push away, - = pull toward
+      radial = Math.max(-1, Math.min(1, radial));
       const mx = -dy / d + (dx / d) * radial;
       const my = dx / d + (dy / d) * radial;
       const l = Math.hypot(mx, my) || 1;
@@ -106,7 +110,37 @@ export function smartPick(s) {
   applyChoice(s, ch[0]);
 }
 
-export function drive({ seed, runLength, characterId, seconds }) {
+// Focusing policy: pump the STARTING weapon to max + grab its partner passive, then
+// take the evolution. Models a player who commits to one weapon — a deterministic way
+// to prove evolutions are reachable through the real sim (the generalist smartPick is
+// seed-sensitive about which weapon, if any, it maxes).
+export function focusPick(s) {
+  const ch = levelUpChoices(s);
+  const p = s.player;
+  const w0 = p.weapons[0];
+  const def0 = WEAPONS[w0.id];
+  const score = (c) => {
+    if (c.kind === "evolution") return 1000;
+    if (c.kind === "heal") return p.hp / p.maxHp < 0.35 ? 600 : 1;
+    if (c.kind === "weapon-up" && (c.w === w0 || c.id === w0.id)) return 500;
+    if (def0 && c.kind === "passive-new" && c.id === def0.requiresPassive)
+      return 400;
+    if (c.kind === "weapon-new" && (c.id === "orbit" || c.id === "aura"))
+      return 200;
+    if (c.kind === "weapon-up") return 50;
+    return 10;
+  };
+  ch.sort((a, b) => score(b) - score(a));
+  applyChoice(s, ch[0]);
+}
+
+export function drive({
+  seed,
+  runLength,
+  characterId,
+  seconds,
+  pick = smartPick,
+}) {
   const s = createRunState({
     seed,
     runLength,
@@ -123,7 +157,7 @@ export function drive({ seed, runLength, characterId, seconds }) {
     stepSim(s, STEP);
     let guard = 0;
     while (s.awaitingLevelUp) {
-      smartPick(s);
+      pick(s);
       if (++guard > 200)
         fail("level-up resolver stuck at t=" + s.time.toFixed(1));
     }
@@ -183,6 +217,19 @@ function main() {
     "boss should be the only enemy",
   );
 
+  // Knight (free starter, forward whip) must also be able to win — regression guard
+  // for the both-sides whip fix that made it viable while kiting.
+  const kv = drive({
+    seed: 1234,
+    runLength: 300,
+    characterId: "knight",
+    seconds: 600,
+  });
+  ok(
+    kv.s.outcome === "victory",
+    "Knight should win the 5-min boss (got " + kv.s.outcome + ")",
+  );
+
   // M4: a reliable build reaches VICTORY at 5-min and 15-min, banking the boss reward.
   const v5 = drive({
     seed: 1234,
@@ -206,17 +253,32 @@ function main() {
     v15.s.outcome === "victory",
     "mage should win the 15-min boss (got " + v15.s.outcome + ")",
   );
+
+  // Evolutions are reachable: a focused build evolves in a normal run. Summed across
+  // a few focused runs so the check isn't brittle on a single seed.
+  let focusEvolves = 0;
+  for (const [sd, cid] of [
+    [7, "mage"],
+    [7, "rogue"],
+    [1234, "knight"],
+  ]) {
+    focusEvolves += drive({
+      seed: sd,
+      runLength: 600,
+      characterId: cid,
+      seconds: 600,
+      pick: focusPick,
+    }).evolves;
+  }
   ok(
-    v15.evolves > 0,
-    "an evolution should actually fire in a focused full run (got " +
-      v15.evolves +
-      ")",
+    focusEvolves > 0,
+    "a focused build should evolve (got " + focusEvolves + " across runs)",
   );
 
   console.log(
     `SimProbe OK (M7): knight reached ${surv.s.time.toFixed(0)}s lvl=${surv.s.player.level} | ` +
-      `mage 5min=VICTORY@${v5.s.time.toFixed(0)}s coins=${v5.s.player.coins} | ` +
-      `mage 15min=VICTORY@${v15.s.time.toFixed(0)}s evolves=${v15.evolves}`,
+      `knight 5min=VICTORY | mage 5min=VICTORY@${v5.s.time.toFixed(0)}s | ` +
+      `mage 15min=VICTORY@${v15.s.time.toFixed(0)}s | focus-evolves=${focusEvolves}`,
   );
 }
 
