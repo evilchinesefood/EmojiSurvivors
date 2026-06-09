@@ -62,7 +62,8 @@ export function createRunState({ seed, runLength, character, powerGrid = {} }) {
     coins: [],
     drops: [], // health / chest / magnet pickups
     orbits: [], // persistent orbiting weapon bodies
-    hazards: [], // aura/explosion zones (render only, short-lived)
+    hazards: [], // one-shot burst visuals (explosion/whip), short-lived, render only
+    auraViz: [], // steady player-centered aura glows (continuous weapons), render only
     strikes: [], // one-shot AoE damage events emitted by weapons, consumed by combat
     input: { move: { x: 0, y: 0 } },
     events: [],

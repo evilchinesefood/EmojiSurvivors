@@ -233,7 +233,8 @@ function fire(state, w, def, sc, stats, dm) {
         weaponId: def.id,
         lifesteal: 0,
       });
-      pushHazard(state, p.x, p.y, radius, def.color || "rgba(116,224,74,", 0.2);
+      // No per-pulse hazard: the aura is drawn as a steady glow (see auraViz below)
+      // so it never strobes. The strike above is the (pulsed) damage.
       break;
     }
     case "lob": {
@@ -295,6 +296,7 @@ export function stepWeapons(state, dt) {
   const stats = state.stats;
   const dm = damageMul(state);
   state.player.dmgMul = dm;
+  state.auraViz.length = 0;
 
   for (const w of state.player.weapons) {
     const def = WEAPONS[w.id];
@@ -303,6 +305,13 @@ export function stepWeapons(state, dt) {
     if (def.behavior === "orbit") {
       ensureOrbits(state, w, def, sc, stats, dm);
       continue;
+    }
+    if (def.behavior === "aura") {
+      // Steady visual every step (damage still pulses via the strike in fire()).
+      state.auraViz.push({
+        r: def.radius * stats.area * sc.area,
+        color: def.color || "rgba(116,224,74,",
+      });
     }
     const interval = Math.max(0.05, sc.interval / stats.cooldown);
     w.cd -= dt;

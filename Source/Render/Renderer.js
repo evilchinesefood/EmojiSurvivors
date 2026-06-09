@@ -234,17 +234,41 @@ export function makeRenderer(ctx) {
       emoji(d.emoji, cam.toScreenX(d.x), cam.toScreenY(d.y), d.size || 20);
     }
 
-    // Aura / explosion zones (render-only) under the actors.
+    // Steady aura glows (continuous weapons) — soft radial gradient that gently
+    // breathes around the player. Never strobes (the old per-pulse rings did).
+    if (state.auraViz && state.auraViz.length) {
+      const px = cam.toScreenX(state.player.x);
+      const py = cam.toScreenY(state.player.y);
+      const breathe = 0.94 + 0.06 * Math.sin(state.time * 2);
+      for (const av of state.auraViz) {
+        const r = av.r * breathe;
+        const g = ctx.createRadialGradient(px, py, r * 0.25, px, py, r);
+        g.addColorStop(0, av.color + "0.13)");
+        g.addColorStop(0.7, av.color + "0.06)");
+        g.addColorStop(1, av.color + "0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // One-shot burst visuals (explosion / whip) — soft blooms with a smooth ease-out
+    // fade, no hard bright ring (the stroke was the harsh, strobing part).
     for (const z of state.hazards) {
       if (!cam.inView(z.x, z.y, z.r + 20)) continue;
       const a = z.life != null ? Math.max(0, z.life / (z.maxLife || 1)) : 1;
+      const ease = a * a;
+      const sx = cam.toScreenX(z.x);
+      const sy = cam.toScreenY(z.y);
+      const col = z.color || "rgba(155,108,255,";
+      const g = ctx.createRadialGradient(sx, sy, z.r * 0.15, sx, sy, z.r);
+      g.addColorStop(0, col + 0.2 * ease + ")");
+      g.addColorStop(1, col + "0)");
+      ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(cam.toScreenX(z.x), cam.toScreenY(z.y), z.r, 0, Math.PI * 2);
-      ctx.fillStyle = (z.color || "rgba(155,108,255,") + 0.1 * a + ")";
+      ctx.arc(sx, sy, z.r, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = (z.color || "rgba(155,108,255,") + 0.28 * a + ")";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
     }
 
     // No per-hit enemy flash: a swarm-wide AoE pulse made every emoji bump at once,
