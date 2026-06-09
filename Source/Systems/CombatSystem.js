@@ -243,7 +243,9 @@ export function stepCombat(state, dt) {
     if (!e.dead) continue;
     p.kills += 1;
     if (e.boss) {
-      p.coins += e.coinReward || 0;
+      // The biggest coin source must honor greed + the run's coin multiplier too.
+      const coinMul = state.modifiers ? state.modifiers.coinMul : 1;
+      p.coins += Math.round((e.coinReward || 0) * state.stats.greed * coinMul);
       state.spawn.bossAlive = false;
       state.outcome = "victory";
       emit(state, "kill", { x: e.x, y: e.y, boss: true });

@@ -65,7 +65,7 @@ export function moveAI(s) {
 }
 
 // Priority picks: evolution > emergency heal > 360° coverage (orbit/aura) > push the
-// main weapon to L8 + its partner passive (to evolve) > breadth > depth > survivability.
+// main weapon to max + its partner passive (to evolve) > breadth > depth > survivability.
 export function smartPick(s) {
   const ch = levelUpChoices(s);
   const p = s.player;
@@ -92,7 +92,7 @@ export function smartPick(s) {
       mainDef &&
       c.kind === "weapon-up" &&
       (c.w === main || c.id === main.id) &&
-      main.level < 8
+      main.level < MAX_WEAPON_LEVEL
     )
       return 120;
     if (c.kind === "weapon-new" && p.weapons.length < 4) return 90;

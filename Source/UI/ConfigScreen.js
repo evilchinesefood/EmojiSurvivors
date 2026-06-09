@@ -44,8 +44,10 @@ function modRow(def, sel, meta, onChange) {
   if (!unlocked) {
     control = h("span", { class: "pick-tag" }, icon("lock"));
   } else if (def.type === "toggle") {
-    const sw = h("wa-switch", {});
-    if (sel[def.id]) sw.setAttribute("checked", "");
+    const sw = h("wa-switch", {
+      "prop:checked": !!sel[def.id],
+      "aria-label": def.name,
+    });
     sw.addEventListener("change", () => {
       sel[def.id] = sw.checked;
       onChange();

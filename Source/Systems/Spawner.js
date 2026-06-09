@@ -1,6 +1,6 @@
 // Time-driven spawning. Reads the difficulty curve for interval/cap/elite knobs,
 // weights unlocked tiers, rings the player with periodic swarm waves, and drops a
-// fat elite on its own timer. Boss-at-deadline is layered on in M4. Enemies are
+// fat elite on its own timer. The boss spawns at the run deadline. Enemies are
 // pooled. Spawns happen on a ring just outside a typical viewport.
 import { difficulty } from "../Content/Curve.js";
 import { ENEMIES, NORMAL_TIERS, ELITE_IDS } from "../Content/Enemies.js";
@@ -42,7 +42,7 @@ export function spawnBoss(state) {
   e.knockX = 0;
   e.knockY = 0;
   e.dead = false;
-  e.hitTimers = {};
+  for (const k in e.hitTimers) delete e.hitTimers[k]; // reuse the pooled object
   state.enemies.push(e);
   state.spawn.bossSpawned = true;
   state.spawn.bossAlive = true;
@@ -79,7 +79,7 @@ export function spawnEnemy(state, def, x, y, d) {
   e.knockX = 0;
   e.knockY = 0;
   e.dead = false;
-  e.hitTimers = {};
+  for (const k in e.hitTimers) delete e.hitTimers[k]; // reuse the pooled object
   state.enemies.push(e);
   return e;
 }
@@ -110,6 +110,8 @@ function pickTier(state, t) {
 
 function spawnWave(state, t, d) {
   const p = state.player;
+  // Waves deliberately burst the steady trickle cap for a denser swarm (balance is
+  // tuned around this; the headless probe bounds peak count at 320).
   const n = Math.min(8 + Math.floor(t / 45), 28);
   const base = state.spawnRng.angle();
   const def = ENEMIES[t < 25 ? "wisp" : "bat"];

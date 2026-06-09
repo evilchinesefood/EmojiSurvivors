@@ -7,12 +7,10 @@ export function difficulty(t) {
   return {
     spawnInterval: clamp(0.92 - t * 0.0008, 0.2, 0.92),
     cap: Math.min(46 + t * 0.26, 235),
-    eliteChance: clamp((t / 600) * 0.12, 0, 0.16),
     waveInterval: clamp(28 - t * 0.0085, 15, 28),
     hpScale: 1 + t * 0.0058,
     dmgScale: 1 + t * 0.0015,
     speedScale: 1 + t * 0.0003,
-    valueScale: 1 + t * 0.0011, // XP/coin value of late-game gems
   };
 }
 

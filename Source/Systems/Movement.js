@@ -1,6 +1,6 @@
 // Player + enemy movement. Player: normalized intent × speed. Enemies: seek the
 // player with soft separation (boids-lite via the spatial hash) so swarms surround
-// without stacking on one pixel. (Enemy steering is added in M2.)
+// without stacking on one pixel.
 export function movePlayer(state, dt) {
   const p = state.player;
   const m = state.input.move;

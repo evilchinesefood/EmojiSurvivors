@@ -11,8 +11,8 @@ at the deadline. Coins persist between runs to power up your account.
 
 ## Features
 
-- **5 characters**, each with a starting weapon, a stat tilt, and a unique gimmick
-  (glass-cannon double-fire, missing-HP rage, regen, greed, armor).
+- **6 characters**, each with a starting weapon, a stat tilt, and a unique gimmick
+  (glass-cannon double-fire, missing-HP rage, regen, greed, armor, bone-pact).
 - **6 weapons + 6 evolutions** — aimed bolts, dagger spreads, a whip cone, a thorn aura,
   lobbed axes, orbiting orbs — each evolves at max level when paired with its passive.
 - **7 passives** and a **12-row account-wide power grid** (permanent, coin-bought).

@@ -21,6 +21,7 @@ function nearest(state) {
   let bd = Infinity;
   for (let i = 0; i < en.length; i++) {
     const e = en[i];
+    if (e.dead) continue;
     const dx = e.x - p.x;
     const dy = e.y - p.y;
     const d = dx * dx + dy * dy;
@@ -82,6 +83,11 @@ function spawnLob(state, x, y, tx, ty, dmg, def, area) {
   pr.size = 22;
   pr.weaponId = def.id;
   pr.color = def.color || "rgba(232,193,74,";
+  // Pooled with straight projectiles — clear the fields the proj path reads so a
+  // recycled slot can never inherit stale pierce/ttl/lifesteal.
+  pr.pierce = 0;
+  pr.ttl = pr.lobTime + 0.1;
+  pr.lifesteal = 0;
   state.projectiles.push(pr);
 }
 

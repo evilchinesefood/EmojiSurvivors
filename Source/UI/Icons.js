@@ -26,6 +26,7 @@ export const ICONS = {
   up: { name: "circle-up", primary: "var(--good)" },
   volume: { name: "volume-high" },
   shake: { name: "wave-pulse" },
+  motion: { name: "person-running" },
   hash: { name: "hashtag" },
   check: { name: "circle-check", primary: "var(--good)" },
   reroll: { name: "dice", primary: "var(--gold)" },

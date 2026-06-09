@@ -10,25 +10,31 @@ export function SettingsScreen(ctx) {
     max: "100",
     value: String(Math.round(s.sfx * 100)),
     class: "es-range",
+    "aria-label": "SFX Volume",
   });
   vol.addEventListener("input", () =>
     ctx.meta.setSetting("sfx", Number(vol.value) / 100),
   );
 
-  const shake = h("wa-switch", s.shake ? { checked: true } : {});
-  shake.addEventListener("change", () =>
-    ctx.meta.setSetting("shake", shake.checked),
-  );
+  // WA boolean state is the `checked` PROPERTY (not the attribute) — use prop:checked.
+  const toggle = (on, key, label) => {
+    const el = h("wa-switch", { "prop:checked": !!on, "aria-label": label });
+    el.addEventListener("change", () => ctx.meta.setSetting(key, el.checked));
+    return el;
+  };
 
-  const dmg = h("wa-switch", s.damageNumbers ? { checked: true } : {});
-  dmg.addEventListener("change", () =>
-    ctx.meta.setSetting("damageNumbers", dmg.checked),
-  );
-
-  const aim = h("wa-switch", s.manualAim ? { checked: true } : {});
-  aim.addEventListener("change", () =>
-    ctx.meta.setSetting("manualAim", aim.checked),
-  );
+  const shake = toggle(s.shake, "shake", "Screen Shake");
+  const dmg = toggle(s.damageNumbers, "damageNumbers", "Damage Numbers");
+  const aim = toggle(s.manualAim, "manualAim", "Manual Aim");
+  // Reduced Motion defaults from the OS preference until the player sets it explicitly.
+  const reduceEff =
+    s.reducedMotion != null
+      ? s.reducedMotion
+      : !!(
+          globalThis.matchMedia &&
+          matchMedia("(prefers-reduced-motion: reduce)").matches
+        );
+  const reduce = toggle(reduceEff, "reducedMotion", "Reduced Motion");
 
   const row = (ic, label, control) =>
     h(
@@ -59,6 +65,7 @@ export function SettingsScreen(ctx) {
       { class: "col", style: "align-items:center" },
       row("volume", "SFX Volume", vol),
       row("shake", "Screen Shake", shake),
+      row("motion", "Reduced Motion", reduce),
       row("hash", "Damage Numbers", dmg),
       row("swords", "Manual Aim", aim),
     ),

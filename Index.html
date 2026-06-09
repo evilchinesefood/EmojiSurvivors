@@ -7,6 +7,12 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#0e0b14" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="EmojiSurvivors" />
     <title>EmojiSurvivors</title>
     <link
       rel="icon"
@@ -41,9 +47,15 @@
     <link rel="stylesheet" href="./Source/Styles/Hud.css" />
   </head>
   <body>
-    <canvas id="Game"></canvas>
+    <h1 class="sr-only">EmojiSurvivors</h1>
+    <canvas
+      id="Game"
+      role="img"
+      aria-label="EmojiSurvivors game field"
+    ></canvas>
     <div id="Hud" class="hud" hidden></div>
     <div id="Overlay" class="overlay-layer"></div>
+    <div id="Live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <script type="module" src="./Source/Main.js"></script>
   </body>
 </html>

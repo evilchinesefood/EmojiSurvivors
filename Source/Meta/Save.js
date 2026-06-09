@@ -1,6 +1,8 @@
 // localStorage save schema + versioned migration. Bad/old/partial saves migrate
 // forward and never crash — load always returns a complete, valid save. Storage is a
 // {getItem,setItem} seam so it's node-testable with an in-memory stub.
+import { POWER_GRID } from "../Content/PowerGrid.js";
+
 export const SAVE_KEY = "emojisurvivors-save";
 export const SAVE_VERSION = 2;
 
@@ -22,20 +24,28 @@ export function defaultSave() {
 export function migrate(raw) {
   const d = defaultSave();
   if (!raw || typeof raw !== "object") return d;
-  const num = (v) => (Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
+  const num = (v) => (Number.isFinite(+v) ? Math.max(0, Math.floor(+v)) : 0);
+  // Keep only known grid stats, clamp each to its row max (drops corrupt/unknown keys).
+  const cleanGrid = (g) => {
+    const out = {};
+    if (g && typeof g === "object")
+      for (const k in POWER_GRID) {
+        const v = num(g[k]);
+        if (v > 0) out[k] = Math.min(v, POWER_GRID[k].max);
+      }
+    return out;
+  };
+  // Only the three real run lengths, each coerced to a non-negative integer.
+  const cleanTimes = (b) => {
+    const out = { ...d.bestTimes };
+    if (b && typeof b === "object") for (const k in out) out[k] = num(b[k]);
+    return out;
+  };
   return {
     version: SAVE_VERSION,
     coins: num(raw.coins),
-    powerGrid:
-      raw.powerGrid && typeof raw.powerGrid === "object"
-        ? { ...raw.powerGrid }
-        : {},
-    bestTimes: {
-      ...d.bestTimes,
-      ...(raw.bestTimes && typeof raw.bestTimes === "object"
-        ? raw.bestTimes
-        : {}),
-    },
+    powerGrid: cleanGrid(raw.powerGrid),
+    bestTimes: cleanTimes(raw.bestTimes),
     plays: num(raw.plays),
     wins: num(raw.wins),
     bestScore: num(raw.bestScore),

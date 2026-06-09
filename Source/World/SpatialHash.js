@@ -3,7 +3,10 @@
 // circle. Keeps 1000+ entities cheap by never doing O(n²) scans.
 export function makeSpatialHash(cell = 72) {
   const buckets = new Map();
-  const ck = (cx, cy) => cx + "," + cy;
+  // Pack a signed cell-coord pair into one non-negative integer key — avoids the
+  // per-insert + per-queried-cell string allocation that dominated GC under swarms.
+  // ±32768 cells × 72px ≈ ±2.3M world units of headroom (ample for a run).
+  const ck = (cx, cy) => (cx + 32768) * 65536 + (cy + 32768);
 
   return {
     cell,

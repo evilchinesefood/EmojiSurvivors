@@ -33,8 +33,13 @@ export function recomputeStats(state) {
   const oldMax = p.maxHp;
   state.stats = stats;
   p.maxHp = stats.maxHp;
-  if (stats.maxHp > oldMax)
-    p.hp = Math.min(stats.maxHp, p.hp + (stats.maxHp - oldMax));
+  // Conserve the HP ratio across a maxHp change — an HP-up pick is NOT a free heal.
+  if (stats.maxHp !== oldMax) {
+    const ratio = oldMax > 0 ? p.hp / oldMax : 1;
+    const next = Math.min(p.maxHp, Math.round(p.maxHp * ratio));
+    // HP is fractional — never round a living player down to 0 (alive-at-0 state).
+    p.hp = p.hp > 0 ? Math.max(1, next) : next;
+  }
   if (p.hp > p.maxHp) p.hp = p.maxHp;
   p.magnetR = magnetRadius(stats);
   p.pickupR = pickupRadius(stats);
@@ -167,8 +172,9 @@ export function levelUpChoices(state) {
   const chosen = forced.slice(0, Math.max(1, want - 1));
   while (chosen.length < want && cand.length)
     chosen.push(weightedTake(state.rollRng, cand));
-  let fi = 0;
-  while (chosen.length < 3) chosen.push(FILLERS[fi++ % FILLERS.length]);
+  // Backfill a thin hand with DISTINCT fillers only — never show the same card twice.
+  for (let fi = 0; fi < FILLERS.length && chosen.length < 3; fi++)
+    chosen.push(FILLERS[fi]);
   return chosen;
 }
 

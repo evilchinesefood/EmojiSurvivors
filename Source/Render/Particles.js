@@ -116,6 +116,10 @@ export function makeParticles() {
       if (p.text) {
         ctx.globalAlpha = a;
         ctx.font = "700 " + p.size + "px " + EMOJI_FONT;
+        // Dark halo so floaters stay readable over bright emoji + auras.
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(0,0,0,0.85)";
+        ctx.strokeText(p.text, sx, sy);
         ctx.fillStyle = p.color;
         ctx.fillText(p.text, sx, sy);
       } else {

@@ -1,7 +1,7 @@
 // Weapon defs (emoji = canvas sprite). `behavior` drives WeaponSystem firing.
 // Base numbers are pre-stat; scaleWeapon(def, level) applies level scaling, then the
 // system multiplies by resolved stats (might/area/cooldown/projSpeed/projCount...).
-// Each base weapon evolves at L8 while holding `requiresPassive`.
+// Each base weapon evolves at max level (MAX_WEAPON_LEVEL) while holding `requiresPassive`.
 //
 // behaviors: aimed · spread · whip · aura · lob · orbit · nova
 export const WEAPONS = {

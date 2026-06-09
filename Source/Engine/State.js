@@ -94,7 +94,6 @@ export function createRunState({
       bossSpawned: false,
       bossAlive: false,
     },
-    stats_kills: 0,
   };
 }
 

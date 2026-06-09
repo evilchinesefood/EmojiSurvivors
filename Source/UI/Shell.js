@@ -15,6 +15,15 @@ export function makeShell({ overlay, hud, machine, screens }) {
     mount(overlay, factory ? factory() : null);
     if (HUD_STATES.has(s)) hud.show();
     else hud.hide();
+    // Move keyboard focus into a freshly-mounted overlay so keyboard-only players can
+    // reach it — critical for the mandatory level-up screen. (:focus-visible keeps the
+    // ring keyboard-only, so mouse users don't see an outline.)
+    if (factory) {
+      const f = overlay.querySelector(
+        "wa-button, button, [tabindex], a[href], input",
+      );
+      f?.focus?.();
+    }
   }
   machine.onChange(render);
   return { render };

@@ -30,9 +30,16 @@ export function makeInput({ canvas, isPlaying, onPause }) {
     }
   });
   addEventListener("keyup", (e) => held.delete(e.code));
-  addEventListener("blur", () => {
+  const release = () => {
     held.clear();
     pointer = null;
+    hover = null;
+  };
+  addEventListener("blur", release);
+  // Backgrounding mid-press (notification, app switch) can drop the pointerup — clear
+  // so the player doesn't keep walking toward a stale point on resume.
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) release();
   });
 
   const setPointer = (e) => {
@@ -46,6 +53,7 @@ export function makeInput({ canvas, isPlaying, onPause }) {
   });
   canvas.addEventListener("pointermove", (e) => {
     if (pointer) setPointer(e);
+    if (!isPlaying()) return; // don't track a stale cursor for aim outside a run
     const r = canvas.getBoundingClientRect();
     hover = { x: e.clientX - r.left, y: e.clientY - r.top };
   });

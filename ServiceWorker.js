@@ -1,4 +1,4 @@
-const CACHE = "emojisurvivors-v14";
+const CACHE = "emojisurvivors-v15";
 const SHELL_FIRST_PARTY = [
   "./",
   "./Index.html",
@@ -129,6 +129,36 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
+
+  // Navigations: network-first so a fresh deploy's Index.html (and thus the new module
+  // graph) is picked up promptly. Falls back to the cached shell when offline.
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          if (res && res.ok && res.type === "basic") {
+            const copy = res.clone();
+            caches
+              .open(CACHE)
+              .then((c) => c.put(e.request, copy))
+              .catch(() => {});
+            return res;
+          }
+          // Server error (e.g. mid-deploy 503): prefer the cached shell over the
+          // raw error page; only surface res when nothing is cached.
+          return caches
+            .match(e.request)
+            .then((hit) => hit || caches.match("./Index.html"))
+            .then((hit) => hit || res);
+        })
+        .catch(() =>
+          caches
+            .match(e.request)
+            .then((hit) => hit || caches.match("./Index.html")),
+        ),
+    );
+    return;
+  }
 
   e.respondWith(
     caches.match(e.request).then((hit) => {

@@ -6,8 +6,24 @@ const EMOJI_FONT =
 const G = 64;
 
 export function makeRenderer(ctx) {
+  // Memoize the font shorthand per size (a small finite set) + skip redundant `ctx.font`
+  // writes — setting/parsing the font is one of the costliest 2D-context ops per frame.
+  const fontCache = new Map();
+  let lastFont = "";
+  function fontFor(size) {
+    let f = fontCache.get(size);
+    if (f === undefined) {
+      f = size + "px " + EMOJI_FONT;
+      fontCache.set(size, f);
+    }
+    return f;
+  }
   function emoji(ch, sx, sy, size) {
-    ctx.font = size + "px " + EMOJI_FONT;
+    const f = fontFor(size);
+    if (f !== lastFont) {
+      ctx.font = f;
+      lastFont = f;
+    }
     // Color emoji honor the fill's ALPHA: the hazard pass (every weapon fire) leaves
     // fillStyle at a low-alpha color, which made actors drawn after it render ~10%
     // opaque — a per-attack flash. Force full opacity for every emoji.
@@ -193,20 +209,29 @@ export function makeRenderer(ctx) {
     }
   }
 
+  // The vignette depends only on the viewport size — build it once per resize, not
+  // every frame (createRadialGradient + addColorStop allocate each call).
+  let vigGrad = null;
+  let vigW = 0;
+  let vigH = 0;
   function vignette(cam) {
     const w = cam.w;
     const h = cam.h;
-    const g = ctx.createRadialGradient(
-      w / 2,
-      h / 2,
-      Math.min(w, h) * 0.46,
-      w / 2,
-      h / 2,
-      Math.max(w, h) * 0.74,
-    );
-    g.addColorStop(0, "rgba(8,5,16,0)");
-    g.addColorStop(1, "rgba(8,5,16,0.5)");
-    ctx.fillStyle = g;
+    if (!vigGrad || vigW !== w || vigH !== h) {
+      vigGrad = ctx.createRadialGradient(
+        w / 2,
+        h / 2,
+        Math.min(w, h) * 0.46,
+        w / 2,
+        h / 2,
+        Math.max(w, h) * 0.74,
+      );
+      vigGrad.addColorStop(0, "rgba(8,5,16,0)");
+      vigGrad.addColorStop(1, "rgba(8,5,16,0.5)");
+      vigW = w;
+      vigH = h;
+    }
+    ctx.fillStyle = vigGrad;
     ctx.fillRect(0, 0, w, h);
   }
 
@@ -220,6 +245,7 @@ export function makeRenderer(ctx) {
   function entities(state, cam) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+    lastFont = ""; // other layers (particles/fx) change ctx.font between frames
 
     for (const g of state.gems) {
       if (!cam.inView(g.x, g.y, 24)) continue;

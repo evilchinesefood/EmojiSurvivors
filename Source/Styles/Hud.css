@@ -137,7 +137,7 @@
 .hud-pause {
   position: fixed;
   top: max(0.5rem, env(safe-area-inset-top));
-  right: 0.6rem;
+  right: max(0.6rem, env(safe-area-inset-right));
   pointer-events: auto;
   width: var(--tap);
   height: var(--tap);
@@ -155,7 +155,7 @@
 .hud-speed {
   position: fixed;
   top: max(0.5rem, env(safe-area-inset-top));
-  right: calc(0.6rem + var(--tap) + 0.4rem);
+  right: calc(max(0.6rem, env(safe-area-inset-right)) + var(--tap) + 0.4rem);
   pointer-events: auto;
   height: var(--tap);
   min-width: var(--tap);
