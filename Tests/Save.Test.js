@@ -23,21 +23,20 @@ describe("Save", () => {
   it("default save has the expected shape", () => {
     const d = defaultSave();
     expect(d.version).toBe(SAVE_VERSION);
-    expect(d.unlockedCharacters).toEqual(["knight"]);
     expect(d.coins).toBe(0);
+    expect(d.bestTimes[300]).toBe(0);
   });
 
   it("migrate(null/garbage) returns a clean default", () => {
     expect(migrate(null).coins).toBe(0);
-    expect(migrate("nope").unlockedCharacters).toEqual(["knight"]);
+    expect(migrate("nope").version).toBe(SAVE_VERSION);
     expect(migrate(42).version).toBe(SAVE_VERSION);
   });
 
-  it("migrate fills gaps and always keeps Knight unlocked", () => {
-    const m = migrate({ coins: 250, unlockedCharacters: ["mage"] });
+  it("migrate fills gaps and keeps known fields", () => {
+    const m = migrate({ coins: 250, powerGrid: { might: 2 } });
     expect(m.coins).toBe(250);
-    expect(m.unlockedCharacters.includes("knight")).toBeTruthy();
-    expect(m.unlockedCharacters.includes("mage")).toBeTruthy();
+    expect(m.powerGrid.might).toBe(2);
     expect(m.bestTimes[300]).toBe(0); // gap filled
   });
 

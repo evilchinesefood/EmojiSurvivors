@@ -8,7 +8,6 @@ export function defaultSave() {
   return {
     version: SAVE_VERSION,
     coins: 0,
-    unlockedCharacters: ["knight"],
     powerGrid: {},
     bestTimes: { 300: 0, 600: 0, 900: 0 },
     settings: { sfx: 0.6, shake: true, damageNumbers: true },
@@ -22,9 +21,6 @@ export function migrate(raw) {
   return {
     version: SAVE_VERSION,
     coins: Number.isFinite(raw.coins) ? Math.max(0, Math.floor(raw.coins)) : 0,
-    unlockedCharacters: Array.isArray(raw.unlockedCharacters)
-      ? Array.from(new Set(["knight", ...raw.unlockedCharacters]))
-      : ["knight"],
     powerGrid:
       raw.powerGrid && typeof raw.powerGrid === "object"
         ? { ...raw.powerGrid }

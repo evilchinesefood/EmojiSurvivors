@@ -1,7 +1,5 @@
 import { h } from "./Dom.js";
 import { icon } from "./Icons.js";
-import { CHARACTERS, CHARACTER_IDS } from "../Content/Characters.js";
-import { WEAPONS } from "../Content/Weapons.js";
 import { POWER_GRID, POWER_GRID_IDS } from "../Content/PowerGrid.js";
 
 export function ShopScreen(ctx) {
@@ -11,48 +9,6 @@ export function ShopScreen(ctx) {
     { class: "wallet" },
     icon("coin"),
     String(meta.coins),
-  );
-
-  const charCards = CHARACTER_IDS.filter((id) => CHARACTERS[id].price > 0).map(
-    (id) => {
-      const c = CHARACTERS[id];
-      const owned = meta.isUnlocked(id);
-      let foot;
-      if (owned) {
-        foot = h("span", { class: "pick-tag good" }, icon("check"), " Owned");
-      } else {
-        const b = h(
-          "wa-button",
-          { variant: "brand", size: "s" },
-          icon("coin", { slot: "start" }),
-          String(c.price),
-        );
-        b.disabled = meta.coins < c.price;
-        b.addEventListener("click", () => {
-          if (meta.unlockCharacter(id)) ctx.refresh();
-        });
-        foot = b;
-      }
-      return h(
-        "div",
-        { class: "pick-card" },
-        h("div", { class: "pick-emoji" }, c.emoji),
-        h("div", { class: "pick-name" }, c.name),
-        h(
-          "div",
-          { class: "pick-tag" },
-          WEAPONS[c.weapon].emoji +
-            " " +
-            WEAPONS[c.weapon].name +
-            " · " +
-            c.passive.emoji +
-            " " +
-            c.passive.name,
-        ),
-        h("div", { class: "pick-desc" }, c.blurb),
-        h("div", { class: "pick-foot" }, foot),
-      );
-    },
   );
 
   const rows = POWER_GRID_IDS.map((stat) => {
@@ -126,13 +82,11 @@ export function ShopScreen(ctx) {
       h(
         "div",
         { class: "title", style: "font-size:clamp(1.4rem,5vw,2.2rem)" },
-        "Shop",
+        "Power Grid",
       ),
       wallet,
     ),
-    h("div", { class: "subtitle" }, "Heroes"),
-    h("div", { class: "card-grid" }, charCards),
-    h("div", { class: "subtitle" }, "Power Grid"),
+    h("div", { class: "subtitle" }, "permanent account-wide upgrades"),
     h("div", { class: "shop-grid" }, rows),
     back,
   );

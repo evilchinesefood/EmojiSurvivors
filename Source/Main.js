@@ -203,7 +203,6 @@ const screens = {
     SettingsScreen({ meta, onBack: () => machine.set(S.MENU) }),
   [S.SELECT]: () =>
     SelectScreen({
-      meta,
       onSelect: (id) => {
         selectedCharId = id;
         machine.set(S.CONFIG);

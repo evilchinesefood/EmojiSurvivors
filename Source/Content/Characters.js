@@ -8,7 +8,6 @@ export const CHARACTERS = {
     name: "Knight",
     emoji: "🛡️",
     weapon: "whip",
-    price: 0,
     blurb: "Balanced. A wall with a whip.",
     tilt: [
       { stat: "hpMul", op: "mul", value: 1.1 },
@@ -26,7 +25,6 @@ export const CHARACTERS = {
     name: "Mage",
     emoji: "🧙",
     weapon: "bolt",
-    price: 500,
     blurb: "Glass cannon. Hits hard, dies fast.",
     tilt: [
       { stat: "might", op: "mul", value: 1.2 },
@@ -44,7 +42,6 @@ export const CHARACTERS = {
     name: "Rogue",
     emoji: "🗡️",
     weapon: "daggers",
-    price: 600,
     blurb: "Fast and greedy. Collects everything.",
     tilt: [
       { stat: "speedMul", op: "mul", value: 1.2 },
@@ -60,7 +57,6 @@ export const CHARACTERS = {
     name: "Druid",
     emoji: "🌿",
     weapon: "aura",
-    price: 600,
     blurb: "Slow regenerator wreathed in thorns.",
     tilt: [
       { stat: "recovery", op: "add", value: 1 },
@@ -78,7 +74,6 @@ export const CHARACTERS = {
     name: "Barbarian",
     emoji: "🪓",
     weapon: "axe",
-    price: 800,
     blurb: "Tanky bruiser — angrier as he bleeds.",
     tilt: [
       { stat: "hpMul", op: "mul", value: 1.25 },
