@@ -1,13 +1,16 @@
-// Account state wrapper over the save: coins, power-grid levels, best times, settings.
-// Every mutation persists immediately. Reads are live getters so screens always
-// reflect the latest save. (All characters are free — no unlock state.)
+// Account state wrapper over the save: coins, power-grid levels, character unlocks,
+// records, best times, settings. Every mutation persists immediately. Reads are live
+// getters so screens always reflect the latest save. Tainted (tampered) saves pay
+// 10x prices — the Potato Economy is not kind to cheaters.
 import { loadFrom, saveTo } from "./Save.js";
+import { insertEntry } from "./Records.js";
 import { POWER_GRID } from "../Content/PowerGrid.js";
 import { MOD_DEFS } from "../Content/Modifiers.js";
 
 export function makeMeta(storage) {
   const data = loadFrom(storage);
   const persist = () => saveTo(storage, data);
+  const priceMul = () => (data.tainted ? 10 : 1);
 
   return {
     data,
@@ -34,6 +37,15 @@ export function makeMeta(storage) {
     },
     get lastModifiers() {
       return data.lastModifiers;
+    },
+    get records() {
+      return data.records;
+    },
+    get playerName() {
+      return data.playerName;
+    },
+    get tainted() {
+      return !!data.tainted;
     },
     // A modifier is available once its play/win threshold is met (free = always).
     isModifierUnlocked(def) {
@@ -78,19 +90,45 @@ export function makeMeta(storage) {
     gridCost(stat) {
       const row = POWER_GRID[stat];
       const lvl = data.powerGrid[stat] || 0;
-      return !row || lvl >= row.max ? null : row.cost(lvl);
+      return !row || lvl >= row.max ? null : row.cost(lvl) * priceMul();
     },
     buyGrid(stat) {
       const row = POWER_GRID[stat];
       if (!row) return false;
       const lvl = data.powerGrid[stat] || 0;
       if (lvl >= row.max) return false;
-      const cost = row.cost(lvl);
+      const cost = row.cost(lvl) * priceMul();
       if (data.coins < cost) return false;
       data.coins -= cost;
       data.powerGrid[stat] = lvl + 1;
       persist();
       return true;
+    },
+    charCost(c) {
+      return c.cost ? c.cost * priceMul() : 0;
+    },
+    isCharUnlocked(c) {
+      return !c.cost || data.unlockedChars.includes(c.id);
+    },
+    buyCharacter(c) {
+      if (!c.cost || data.unlockedChars.includes(c.id)) return false;
+      const cost = c.cost * priceMul();
+      if (data.coins < cost) return false;
+      data.coins -= cost;
+      data.unlockedChars.push(c.id);
+      persist();
+      return true;
+    },
+    // Push a finished-run entry into its board; prunes to the board cap.
+    // Returns whether the entry placed.
+    recordEntry(entry) {
+      const placed = insertEntry(data.records, entry);
+      persist();
+      return placed;
+    },
+    setPlayerName(name) {
+      data.playerName = String(name || "").slice(0, 24);
+      persist();
     },
     bankRun(runLength, earned, timeSurvived) {
       data.coins += Math.max(0, Math.round(earned));

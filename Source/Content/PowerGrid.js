@@ -114,6 +114,42 @@ export const POWER_GRID = {
     cost: geo(120, 1.9),
     mods: [{ stat: "rerolls", op: "add", value: 1 }],
   },
+  banish: {
+    id: "banish",
+    name: "Banish",
+    emoji: "🚫",
+    desc: "+1 level-up banish",
+    max: 3,
+    cost: geo(120, 1.9),
+    mods: [{ stat: "banishes", op: "add", value: 1 }],
+  },
+  crit: {
+    id: "crit",
+    name: "Critical",
+    emoji: "🎯",
+    desc: "+3% crit chance / level",
+    max: 5,
+    cost: geo(70, 1.75),
+    mods: [{ stat: "critChance", op: "add", value: 0.03 }],
+  },
+  thorns: {
+    id: "thorns",
+    name: "Thorns",
+    emoji: "🌵",
+    desc: "Attackers take 4 dmg / level",
+    max: 5,
+    cost: geo(65, 1.7),
+    mods: [{ stat: "thorns", op: "add", value: 4 }],
+  },
+  armory: {
+    id: "armory",
+    name: "Armory",
+    emoji: "⚔️",
+    desc: "Start with +1 weapon level",
+    max: 2,
+    cost: geo(400, 2.2),
+    mods: [{ stat: "weaponStartLevel", op: "add", value: 1 }],
+  },
 };
 
 export const POWER_GRID_IDS = Object.keys(POWER_GRID);

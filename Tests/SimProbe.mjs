@@ -140,12 +140,17 @@ export function drive({
   characterId,
   seconds,
   pick = smartPick,
+  powerGrid = {},
+  modifiers = {},
+  tainted = false,
 }) {
   const s = createRunState({
     seed,
     runLength,
     character: CHARACTERS[characterId],
-    powerGrid: {},
+    powerGrid,
+    modifiers,
+    tainted,
   });
   const steps = Math.round((seconds ?? runLength) / STEP);
   let maxEnemies = 0;
@@ -275,10 +280,74 @@ function main() {
     "a focused build should evolve (got " + focusEvolves + " across runs)",
   );
 
+  // Expansion: every new survivor can win a 5-min run with their new weapon.
+  for (const cid of ["witch", "ninja", "reaper", "pumpkinKing"]) {
+    const r = drive({
+      seed: 1234,
+      runLength: 300,
+      characterId: cid,
+      seconds: 520,
+    });
+    ok(
+      r.s.outcome === "victory",
+      cid + " should win the 5-min boss (got " + r.s.outcome + ")",
+    );
+  }
+
+  // Hard Mode 3x: still beatable by an invested account — over-tuning guard.
+  const MAXED_GRID = {
+    might: 5,
+    maxHp: 5,
+    moveSpeed: 5,
+    recovery: 5,
+    area: 5,
+    cooldown: 5,
+    luck: 5,
+    magnet: 5,
+    greed: 5,
+    growth: 5,
+    revive: 2,
+    reroll: 3,
+    banish: 3,
+    crit: 5,
+    thorns: 5,
+    armory: 2,
+  };
+  const hv = drive({
+    seed: 1234,
+    runLength: 300,
+    characterId: "mage",
+    seconds: 520,
+    powerGrid: MAXED_GRID,
+    modifiers: { hard: true },
+  });
+  ok(
+    hv.s.outcome === "victory",
+    "maxed mage should win 5-min HARD (got " + hv.s.outcome + ")",
+  );
+
+  // Tainted (Clown Mode) runs stay playable and finite — penalties, not bricks.
+  const tv = drive({
+    seed: 1234,
+    runLength: 300,
+    characterId: "knight",
+    seconds: 120,
+    tainted: true,
+  });
+  ok(
+    !tv.s.outcome || tv.s.outcome === "victory",
+    "tainted run should survive the open (got " + tv.s.outcome + ")",
+  );
+  ok(
+    Number.isFinite(tv.s.auditor.x) && Number.isFinite(tv.s.auditor.y),
+    "auditor position should stay finite",
+  );
+
   console.log(
     `SimProbe OK (M7): knight reached ${surv.s.time.toFixed(0)}s lvl=${surv.s.player.level} | ` +
       `knight 5min=VICTORY | mage 5min=VICTORY@${v5.s.time.toFixed(0)}s | ` +
-      `mage 15min=VICTORY@${v15.s.time.toFixed(0)}s | focus-evolves=${focusEvolves}`,
+      `mage 15min=VICTORY@${v15.s.time.toFixed(0)}s | focus-evolves=${focusEvolves} | ` +
+      `new-chars 4xVICTORY | hard maxed-mage=VICTORY@${hv.s.time.toFixed(0)}s | clown-run OK`,
   );
 }
 

@@ -7,6 +7,7 @@ import { emit } from "../Engine/State.js";
 
 export function damageMul(state) {
   let m = state.stats.might;
+  if (state.tainted) m *= 0.5; // Clown Mode: honk.
   if (state.gimmick === "rage") {
     const p = state.player;
     m *= 1 + (1 - p.hp / p.maxHp);

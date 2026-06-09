@@ -18,5 +18,8 @@ import "./Save.Test.js";
 import "./Meta.Test.js";
 import "./Content.Test.js";
 import "./Modifiers.Test.js";
+import "./Tamper.Test.js";
+import "./Records.Test.js";
+import "./Expansion.Test.js";
 
 run(process.argv[2]);

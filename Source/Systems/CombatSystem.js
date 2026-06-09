@@ -22,12 +22,30 @@ function knockFrom(e, x, y, force = 50) {
 
 function hurt(state, e, dmg) {
   if (e.dead) return;
-  e.hp -= dmg;
+  let d = dmg;
+  // Real crits (grid row): rolled only when the stat is owned, so vanilla runs
+  // consume zero extra RNG and probe streams stay identical.
+  if (
+    state.stats.critChance > 0 &&
+    state.combatRng.chance(state.stats.critChance)
+  )
+    d *= 1.5;
+  e.hp -= d;
   e.flash = 0.09;
-  const amount = Math.round(dmg);
+  const amount = Math.round(d);
   // A "crit" is just a chunky hit relative to the target — drives gold floaters + a pop.
-  if (dmg >= e.maxHp * 0.18) emit(state, "crit", { x: e.x, y: e.y, amount });
+  if (d >= e.maxHp * 0.18) emit(state, "crit", { x: e.x, y: e.y, amount });
   else emit(state, "damage", { x: e.x, y: e.y, amount });
+  // Last Rites: non-boss foes left under 10% max HP are reaped outright.
+  if (
+    state.gimmick === "lastRites" &&
+    !e.boss &&
+    e.hp > 0 &&
+    e.hp < e.maxHp * 0.1
+  ) {
+    e.hp = 0;
+    emit(state, "reap", { x: e.x, y: e.y });
+  }
   if (e.hp <= 0) e.dead = true;
 }
 
@@ -60,20 +78,47 @@ function dropLoot(state, e) {
     state.coins.push({
       x: e.x,
       y: e.y,
-      value: e.elite ? 12 : 3,
+      // Potato Economy (tainted save): every coin is a potato worth 1.
+      value: state.tainted ? 1 : e.elite ? 12 : 3,
       vx: 0,
       vy: 0,
       vacuum: false,
-      emoji: "🪙",
+      emoji: state.tainted ? "🥔" : "🪙",
       size: 15,
     });
   }
+  // Easter-egg coin bursts (Disco Wisp, Karen) — potato rules still apply.
+  for (let k = 0; k < (e.coinBurst || 0); k++) {
+    state.coins.push({
+      x: e.x + state.combatRng.float(-26, 26),
+      y: e.y + state.combatRng.float(-26, 26),
+      value: state.tainted ? 1 : 3,
+      vx: 0,
+      vy: 0,
+      vacuum: false,
+      emoji: state.tainted ? "🥔" : "🪙",
+      size: 15,
+    });
+  }
+  if (e.kind === "disco") emit(state, "disco", { x: e.x, y: e.y });
+  if (e.kind === "karen") emit(state, "karen", { x: e.x, y: e.y });
   if (!e.elite && state.combatRng.chance(0.012))
     state.drops.push({ x: e.x, y: e.y, kind: "health", emoji: "🍖", size: 22 });
   if (!e.elite && state.combatRng.chance(0.0025))
     state.drops.push({ x: e.x, y: e.y, kind: "magnet", emoji: "🧲", size: 22 });
-  if (e.dropsChest)
-    state.drops.push({ x: e.x, y: e.y, kind: "chest", emoji: "🎁", size: 26 });
+  if (e.dropsChest) {
+    // ~1/12 elite chests is a Mimic: it hops away three times before it's caught.
+    const mimic = state.combatRng.chance(1 / 12);
+    state.drops.push({
+      x: e.x,
+      y: e.y,
+      kind: "chest",
+      emoji: "🎁",
+      size: 26,
+      mimic,
+      hops: mimic ? 3 : 0,
+    });
+  }
 }
 
 function damagePlayer(state, raw) {
@@ -224,16 +269,30 @@ export function stepCombat(state, dt) {
   // 4) enemy → player contact (i-frames)
   if (p.invuln <= 0) {
     state.hash.queryCircle(p.x, p.y, 44, near);
-    let worst = 0;
+    let worstE = null;
     for (let j = 0; j < near.length; j++) {
       const e = near[j];
-      if (e.dead) continue;
+      if (e.dead || e.dmg <= 0) continue; // harmless specials (disco) can't hit
       const dx = e.x - p.x;
       const dy = e.y - p.y;
       const reach = 16 + e.size * 0.5;
-      if (dx * dx + dy * dy <= reach * reach && e.dmg > worst) worst = e.dmg;
+      if (dx * dx + dy * dy <= reach * reach && (!worstE || e.dmg > worstE.dmg))
+        worstE = e;
     }
-    if (worst > 0) damagePlayer(state, worst);
+    if (worstE) {
+      // Shadowstep: dodge the hit outright; the dodge consumes the i-frame window
+      // so it can't re-roll every tick while standing in the swarm.
+      if (state.gimmick === "shadowstep" && state.combatRng.chance(0.2)) {
+        p.invuln = IFRAME;
+        emit(state, "dodge");
+      } else {
+        damagePlayer(state, worstE.dmg);
+        const reflect =
+          state.stats.thorns +
+          (state.gimmick === "backlash" ? 6 + worstE.maxHp * 0.1 : 0);
+        if (reflect > 0) hurt(state, worstE, reflect);
+      }
+    }
   }
 
   // 5) death sweep — loot, kills, victory-on-boss
@@ -242,10 +301,17 @@ export function stepCombat(state, dt) {
     const e = en[i];
     if (!e.dead) continue;
     p.kills += 1;
+    if (p.kills === 666 && !state.devil) {
+      state.devil = true;
+      emit(state, "devil", { x: e.x, y: e.y });
+    }
     if (e.boss) {
       // The biggest coin source must honor greed + the run's coin multiplier too.
+      // (Tainted saves: the boss drops exactly one potato.)
       const coinMul = state.modifiers ? state.modifiers.coinMul : 1;
-      p.coins += Math.round((e.coinReward || 0) * state.stats.greed * coinMul);
+      p.coins += state.tainted
+        ? 1
+        : Math.round((e.coinReward || 0) * state.stats.greed * coinMul);
       state.spawn.bossAlive = false;
       state.outcome = "victory";
       emit(state, "kill", { x: e.x, y: e.y, boss: true });

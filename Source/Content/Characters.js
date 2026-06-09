@@ -1,7 +1,9 @@
-// 5 characters: a starting weapon + a stat tilt + a unique gimmick. Knight is free;
-// the rest are coin-unlocked. `gimmick` strings drive dynamic logic in the systems
-// (Arcane Echo → WeaponSystem, Regrowth → Leveling, Rage → CombatSystem). The
-// static parts of each passive live in `tilt` so StatsModel folds them.
+// 10 characters: a starting weapon + a stat tilt + a unique gimmick. The first six
+// are free; the rest carry a `cost` and are coin-unlocked in the select screen.
+// `gimmick` strings drive dynamic logic in the systems (Arcane Echo/Shadowstep →
+// WeaponSystem/CombatSystem, Regrowth/Second Sight → Leveling, Rage → WeaponSystem,
+// Last Rites/Backlash → CombatSystem). The static parts live in `tilt` so
+// StatsModel folds them.
 export const CHARACTERS = {
   knight: {
     id: "knight",
@@ -97,6 +99,78 @@ export const CHARACTERS = {
       name: "Blood Pact",
       emoji: "🩸",
       desc: "10% on attack: heal 1% max HP",
+    },
+  },
+  witch: {
+    id: "witch",
+    name: "Witch",
+    emoji: "🧙‍♀️",
+    weapon: "orbit",
+    cost: 500,
+    blurb: "Sees more than most. Her familiars circle.",
+    tilt: [
+      { stat: "luck", op: "mul", value: 1.25 },
+      { stat: "hpMul", op: "mul", value: 0.9 },
+    ],
+    gimmick: "secondSight",
+    passive: {
+      name: "Second Sight",
+      emoji: "👁️",
+      desc: "Level-up hands show 4 cards",
+    },
+  },
+  ninja: {
+    id: "ninja",
+    name: "Ninja",
+    emoji: "🥷",
+    weapon: "stars",
+    cost: 800,
+    blurb: "Strikes from shadow; hard to pin down.",
+    tilt: [
+      { stat: "speedMul", op: "mul", value: 1.2 },
+      { stat: "hpMul", op: "mul", value: 0.85 },
+    ],
+    gimmick: "shadowstep",
+    passive: {
+      name: "Shadowstep",
+      emoji: "💨",
+      desc: "20% chance to dodge any hit",
+    },
+  },
+  pumpkinKing: {
+    id: "pumpkinKing",
+    name: "Pumpkin King",
+    emoji: "🎃",
+    weapon: "pumpkinBomb",
+    cost: 800,
+    blurb: "Royalty of the patch. Hits back.",
+    tilt: [
+      { stat: "hpMul", op: "mul", value: 1.2 },
+      { stat: "speedMul", op: "mul", value: 0.9 },
+    ],
+    gimmick: "backlash",
+    passive: {
+      name: "Backlash",
+      emoji: "🌵",
+      desc: "Attackers take 6 + 10% their max HP",
+    },
+  },
+  reaper: {
+    id: "reaper",
+    name: "Reaper",
+    emoji: "☠️",
+    weapon: "scythe",
+    cost: 1200,
+    blurb: "The deadline, personified.",
+    tilt: [
+      { stat: "might", op: "mul", value: 1.15 },
+      { stat: "speedMul", op: "mul", value: 0.92 },
+    ],
+    gimmick: "lastRites",
+    passive: {
+      name: "Last Rites",
+      emoji: "⚰️",
+      desc: "Foes under 10% HP are reaped",
     },
   },
 };

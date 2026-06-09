@@ -13,6 +13,8 @@ import { makeHud } from "./UI/Hud.js";
 import { makeShell } from "./UI/Shell.js";
 import { MenuScreen } from "./UI/MenuScreen.js";
 import { SelectScreen } from "./UI/SelectScreen.js";
+import { RecordsScreen } from "./UI/RecordsScreen.js";
+import { postRun } from "./Meta/OnlineBoard.js";
 import { ConfigScreen } from "./UI/ConfigScreen.js";
 import { PauseScreen } from "./UI/PauseScreen.js";
 import { LevelUpScreen } from "./UI/LevelUpScreen.js";
@@ -105,6 +107,16 @@ function reduceMotion() {
 let state = null;
 let selectedCharId = STARTER_ID;
 let lastSummary = { time: 0, kills: 0, level: 1, coins: 0 };
+let quack = false; // Konami easter egg — ducks until the next Play
+let pacifistShown = false;
+
+// Date-based seasonal flags, computed once at boot and passed into the sim as a
+// run input (tests pass nothing → both false → streams untouched).
+const bootDay = new Date();
+const seasonal = {
+  halloween: bootDay.getMonth() === 9 && bootDay.getDate() === 31,
+  friday13: bootDay.getDay() === 5 && bootDay.getDate() === 13,
+};
 const renderer = makeRenderer(ctx);
 const particles = makeParticles();
 const fx = makeFx();
@@ -138,7 +150,8 @@ function handleEvents() {
   const shakeOn = meta.settings.shake && !reduce;
   let critShook = false; // throttle crit shake to once per drained frame
   for (const ev of state.events) {
-    sfx.play(ev.type);
+    // Clown Mode: every kill honks. The cheater earned this.
+    sfx.play(state.tainted && ev.type === "kill" ? "honk" : ev.type);
     switch (ev.type) {
       case "damage":
         if (meta.settings.damageNumbers && Math.random() < 0.5)
@@ -172,6 +185,51 @@ function handleEvents() {
         // The full-screen red vignette is the main photosensitivity risk — suppress it
         // (and its shake) entirely under reduced motion.
         if (!reduce) fx.hurt(shakeOn);
+        break;
+      case "dodge":
+        particles.text(p.x, p.y - 24, "💨", "#9a8fb0", 14);
+        break;
+      case "disco": {
+        for (const c of ["#ff5a8a", "#ffd23e", "#74e04a", "#46a6ff", "#b89bff"])
+          particles.spark(ev.x, ev.y, c, 8, 240);
+        particles.ring(ev.x, ev.y, "#ffd23e");
+        break;
+      }
+      case "karen":
+        particles.text(
+          ev.x,
+          ev.y - 12,
+          "let me speak to your manager!",
+          "#e8c14a",
+          12,
+        );
+        break;
+      case "mimic":
+        particles.text(ev.x, ev.y - 16, "😏", "#e8c14a", 16);
+        break;
+      case "devil":
+        particles.text(ev.x, ev.y - 16, "666", "#c0354a", 22);
+        announce("666");
+        break;
+      case "whisper": {
+        const lines = [
+          "nice save file",
+          "we know",
+          "👁️",
+          "interesting coins you have",
+          "the game knows",
+        ];
+        particles.text(
+          ev.x,
+          ev.y,
+          lines[(Math.random() * lines.length) | 0],
+          "#9a8fb0",
+          12,
+        );
+        break;
+      }
+      case "reap":
+        particles.text(ev.x, ev.y, "☠️", "#b89bff", 14);
         break;
       case "levelup":
         particles.ring(p.x, p.y, "#e8c14a");
@@ -230,7 +288,10 @@ function startRun(characterId, runLength, modifiers = {}) {
     character,
     powerGrid: meta.powerGrid,
     modifiers,
+    tainted: meta.tainted,
+    seasonal,
   });
+  pacifistShown = false;
   state.prevPlays = meta.plays; // capture BEFORE recordPlay so post-run unlocks fire
   meta.recordPlay(modifiers);
   camera.follow(state.player.x, state.player.y);
@@ -247,14 +308,40 @@ function resume() {
 function restart() {
   if (state) startRun(state.character.id, state.runLength, state.modifierSel);
 }
+// Snapshot the live run as a leaderboard entry. Standard quits are NOT recorded
+// (abandoned-run noise); Endless quits are — quitting is Endless's cash-out.
+function runEntry(won, score) {
+  return {
+    date: Date.now(),
+    runLength: state.runLength,
+    endless: state.endless,
+    hard: state.modifiers.active.includes("hard"),
+    won,
+    score,
+    time: Math.floor(state.time),
+    kills: state.player.kills,
+    level: state.player.level,
+    character: state.character.id,
+    mods: state.modifiers.active.slice(),
+  };
+}
+
+function submitEntry(entry) {
+  meta.recordEntry(entry);
+  if (!meta.tainted) postRun(entry, meta.playerName);
+}
+
 function quitToMenu() {
   // Bank a quit-mid-run (coins / best-time / Endless score) — the only other banking
   // path is endRun(), which a quit never reaches. Guard against double-banking a
   // finished run (outcome already set → already banked by endRun).
   if (state && !state.outcome) {
     meta.bankRun(state.runLength, state.player.coins, state.time);
-    if (state.endless)
-      meta.recordScore(Math.floor(state.player.kills + state.time));
+    if (state.endless) {
+      const score = Math.floor(state.player.kills + state.time);
+      meta.recordScore(score);
+      submitEntry(runEntry(false, score));
+    }
   }
   state = null;
   loop.setTimescale(1);
@@ -268,6 +355,7 @@ function endRun() {
   if (won) meta.recordWin();
   const score = state.endless ? Math.floor(state.player.kills + state.time) : 0;
   if (state.endless) meta.recordScore(score);
+  submitEntry(runEntry(won, score));
   const newUnlocks = meta.newlyUnlocked(state.prevPlays, prevWins);
   lastSummary = {
     time: state.time,
@@ -279,6 +367,7 @@ function endRun() {
     endless: state.endless,
     score,
     bestScore: meta.bestScore,
+    tainted: state.tainted,
     modifiers: state.modifiers.active.slice(),
     newUnlocks: newUnlocks.map((d) => ({ emoji: d.emoji, name: d.name })),
     weapons: state.player.weapons.map((w) => ({
@@ -329,8 +418,14 @@ const screens = {
   [S.MENU]: () =>
     MenuScreen({
       meta,
-      onPlay: () => machine.set(S.SELECT),
+      seasonal,
+      quack,
+      onPlay: () => {
+        quack = false;
+        machine.set(S.SELECT);
+      },
       onShop: () => machine.set(S.SHOP),
+      onRecords: () => machine.set(S.RECORDS),
       onSettings: () => machine.set(S.SETTINGS),
     }),
   [S.SHOP]: () =>
@@ -341,13 +436,16 @@ const screens = {
     }),
   [S.SETTINGS]: () =>
     SettingsScreen({ meta, onBack: () => machine.set(S.MENU) }),
+  [S.RECORDS]: () => RecordsScreen({ meta, onBack: () => machine.set(S.MENU) }),
   [S.SELECT]: () =>
     SelectScreen({
+      meta,
       onSelect: (id) => {
         selectedCharId = id;
         machine.set(S.CONFIG);
       },
       onBack: () => machine.set(S.MENU),
+      refresh: () => shell.render(),
     }),
   [S.CONFIG]: () =>
     ConfigScreen({
@@ -414,6 +512,22 @@ const screens = {
 
 const shell = makeShell({ overlay, hud, machine, screens });
 
+// Konami code on any screen → the menu goes full duck until the next Play.
+const KONAMI =
+  "ArrowUp,ArrowUp,ArrowDown,ArrowDown,ArrowLeft,ArrowRight,ArrowLeft,ArrowRight,b,a".split(
+    ",",
+  );
+let konamiI = 0;
+addEventListener("keydown", (e) => {
+  konamiI =
+    e.key === KONAMI[konamiI] ? konamiI + 1 : e.key === KONAMI[0] ? 1 : 0;
+  if (konamiI === KONAMI.length) {
+    konamiI = 0;
+    quack = true;
+    if (machine.is(S.MENU)) shell.render();
+  }
+});
+
 const loop = createLoop(
   (dt) => {
     if (machine.is(S.PLAYING)) {
@@ -423,6 +537,16 @@ const loop = createLoop(
         : null;
       stepSim(state, dt);
       handleEvents();
+      if (!pacifistShown && state.time >= 60 && state.player.kills === 0) {
+        pacifistShown = true;
+        particles.text(
+          state.player.x,
+          state.player.y - 30,
+          "pacifist run? 🕊️",
+          "#9a8fb0",
+          13,
+        );
+      }
       particles.update(dt);
       if (state.outcome) endRun();
       else if (state.awaitingLevelUp) {
@@ -445,9 +569,18 @@ const loop = createLoop(
       fx.drawVignette(ctx, camera.w, camera.h);
       hud.update(state, trayItems());
     } else {
+      // Menu backdrop: drift the camera at 45° (equal x/y) so the graveyard slides
+      // by. Wall-clock based (rAF rate varies); the gap guard skips stale deltas
+      // after time spent in a run.
+      const now = performance.now() / 1000;
+      if (now - driftLast < 1) driftT += (now - driftLast) * 36;
+      driftLast = now;
+      camera.follow(driftT, driftT);
       renderer.background(camera);
     }
   },
 );
+let driftT = 0;
+let driftLast = 0;
 loop.start();
 machine.set(S.MENU);

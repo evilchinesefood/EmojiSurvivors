@@ -1,4 +1,4 @@
-const CACHE = "emojisurvivors-v15";
+const CACHE = "emojisurvivors-v16";
 const SHELL_FIRST_PARTY = [
   "./",
   "./Index.html",
@@ -43,6 +43,8 @@ const SHELL_FIRST_PARTY = [
   // Meta
   "./Source/Meta/Save.js",
   "./Source/Meta/Meta.js",
+  "./Source/Meta/Records.js",
+  "./Source/Meta/OnlineBoard.js",
   // UI
   "./Source/UI/Dom.js",
   "./Source/UI/Icons.js",
@@ -56,6 +58,7 @@ const SHELL_FIRST_PARTY = [
   "./Source/UI/ResultScreen.js",
   "./Source/UI/ShopScreen.js",
   "./Source/UI/SettingsScreen.js",
+  "./Source/UI/RecordsScreen.js",
   // Styles
   "./Source/Styles/Theme.css",
   "./Source/Styles/Reset.css",
@@ -129,6 +132,8 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
+  // The leaderboard API is live data — never cache-first or runtime-cache it.
+  if (url.pathname.includes("/Api/")) return;
 
   // Navigations: network-first so a fresh deploy's Index.html (and thus the new module
   // graph) is picked up promptly. Falls back to the cached shell when offline.

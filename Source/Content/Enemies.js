@@ -109,10 +109,44 @@ export const ENEMIES = {
     dropsChest: true,
     unlockAt: 150,
   },
+
+  // ── Easter-egg variants (special: true keeps them out of both spawn pools;
+  //    the spawner rolls them explicitly) ──
+  disco: {
+    id: "disco",
+    name: "Disco Wisp",
+    emoji: "🪩",
+    size: 26,
+    hp: 30,
+    speed: 95,
+    dmg: 0, // harmless — it just wants to dance
+    xp: 5,
+    coinChance: 0,
+    coinBurst: 5,
+    flees: true,
+    special: true,
+    unlockAt: 0,
+  },
+  karen: {
+    id: "karen",
+    name: "Karen",
+    emoji: "🧟‍♀️",
+    size: 30,
+    hp: 40,
+    speed: 124, // 2x zombie
+    dmg: 10,
+    xp: 12,
+    coinChance: 0,
+    coinBurst: 3,
+    special: true,
+    unlockAt: 60,
+  },
 };
 
 export const ENEMY_IDS = Object.keys(ENEMIES);
-// Normal (non-elite) tiers, used by the weighted spawn pool.
-export const NORMAL_TIERS = ENEMY_IDS.filter((id) => !ENEMIES[id].elite);
+// Normal (non-elite, non-special) tiers, used by the weighted spawn pool.
+export const NORMAL_TIERS = ENEMY_IDS.filter(
+  (id) => !ENEMIES[id].elite && !ENEMIES[id].special,
+);
 // Elites spawn on their own staggered timers (not the weighted pool).
 export const ELITE_IDS = ENEMY_IDS.filter((id) => ENEMIES[id].elite);

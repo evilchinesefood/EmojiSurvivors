@@ -316,7 +316,19 @@ export function makeRenderer(ctx) {
       emoji(p.emoji, cam.toScreenX(p.x), cam.toScreenY(p.y), p.size || 20);
     }
 
-    // Player (centered). Blink during i-frames.
+    // The Auditor (tainted saves) watches from just behind.
+    if (state.auditor && cam.inView(state.auditor.x, state.auditor.y, 30))
+      emoji(
+        "🕵️",
+        cam.toScreenX(state.auditor.x),
+        cam.toScreenY(state.auditor.y),
+        26,
+      );
+    // The Graveyard Cat (lucky seeds).
+    if (state.cat && cam.inView(state.cat.x, state.cat.y, 24))
+      emoji("🐈‍⬛", cam.toScreenX(state.cat.x), cam.toScreenY(state.cat.y), 20);
+
+    // Player (centered). Blink during i-frames. Clown Mode replaces the sprite.
     const pl = state.player;
     const blink = pl.invuln > 0 && Math.floor(state.time * 16) % 2 === 0;
     if (!blink) {
@@ -328,7 +340,8 @@ export function makeRenderer(ctx) {
         ctx.fillStyle = "rgba(192,53,74,0.45)";
         ctx.fill();
       }
-      emoji(state.character.emoji, sx, sy, 30);
+      emoji(state.tainted ? "🤡" : state.character.emoji, sx, sy, 30);
+      if (state.devil) emoji("😈", sx, sy - 24, 13); // kill #666 horns
     }
   }
 

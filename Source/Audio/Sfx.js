@@ -4,7 +4,14 @@
 export function makeSfx(getVolume) {
   let ctx = null;
   const last = {};
-  const MIN = { kill: 0.045, gem: 0.05, coin: 0.03, hurt: 0.1, damage: 999 };
+  const MIN = {
+    kill: 0.045,
+    gem: 0.05,
+    coin: 0.03,
+    hurt: 0.1,
+    damage: 999,
+    honk: 0.15,
+  };
 
   function ensure() {
     if (!ctx) {
@@ -74,6 +81,17 @@ export function makeSfx(getVolume) {
     switch (type) {
       case "kill":
         tone(200, { type: "square", dur: 0.06, vol: 0.12, slideTo: 110 });
+        break;
+      case "honk":
+        // Clown horn: two-tone bicycle squeeze.
+        tone(330, { type: "square", dur: 0.1, vol: 0.22, slideTo: 250 });
+        tone(250, { type: "square", dur: 0.12, vol: 0.18, when: 0.1 });
+        break;
+      case "disco":
+        arp([523, 659, 784, 1047], 0.07, { type: "square", vol: 0.16 });
+        break;
+      case "mimic":
+        tone(700, { type: "triangle", dur: 0.18, vol: 0.2, slideTo: 300 });
         break;
       case "gem":
         tone(840, { type: "sine", dur: 0.05, vol: 0.1, slideTo: 1100 });

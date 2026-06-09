@@ -7,7 +7,7 @@ export function ShopScreen(ctx) {
   const wallet = h(
     "div",
     { class: "wallet" },
-    icon("coin"),
+    meta.tainted ? "🥔" : icon("coin"),
     String(meta.coins),
   );
 

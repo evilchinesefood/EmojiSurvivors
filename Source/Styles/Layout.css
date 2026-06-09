@@ -307,6 +307,66 @@ wa-button i.fa-duotone {
   }
 }
 
+/* Custom scrollbars — match the arcane chrome, not the browser default.
+   (Browsers that support the standard props ignore the ::-webkit rules.) */
+.mod-list,
+.screen {
+  scrollbar-width: thin;
+  scrollbar-color: var(--arcane-dk) var(--panel);
+}
+.mod-list::-webkit-scrollbar,
+.screen::-webkit-scrollbar {
+  width: 10px;
+}
+.mod-list::-webkit-scrollbar-track,
+.screen::-webkit-scrollbar-track {
+  background: var(--panel);
+  border-radius: 8px;
+}
+.mod-list::-webkit-scrollbar-thumb,
+.screen::-webkit-scrollbar-thumb {
+  background: var(--arcane-dk);
+  border-radius: 8px;
+  border: 2px solid var(--panel);
+}
+.mod-list::-webkit-scrollbar-thumb:hover,
+.screen::-webkit-scrollbar-thumb:hover {
+  background: var(--arcane);
+}
+
+/* Locked (coin-buy) character cards. */
+.pick-card.locked .pick-emoji {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+.pick-card.locked .pick-name {
+  color: var(--muted);
+}
+
+/* Text input (leaderboard name). */
+.es-text {
+  background: var(--bg2);
+  color: var(--bone);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  width: 12rem;
+}
+.es-text:focus-visible {
+  outline: 2px solid var(--arcane-lt);
+}
+
+/* Main menu: lighter veil + no blur so the drifting graveyard backdrop reads. */
+.screen-menu {
+  background: radial-gradient(
+    120% 120% at 50% 0%,
+    rgba(40, 20, 70, 0.5),
+    rgba(8, 6, 14, 0.82) 75%
+  );
+  backdrop-filter: none;
+}
+
 /* Respect the OS "reduce motion" preference — neutralize UI animation/transition.
    In-canvas motion (shake / hurt flash) is gated separately in Main.js. */
 @media (prefers-reduced-motion: reduce) {

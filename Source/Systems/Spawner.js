@@ -25,12 +25,14 @@ export function spawnBoss(state) {
   e.size = def.size;
   e.elite = false;
   e.dropsChest = false;
+  e.flees = false;
+  e.coinBurst = 0;
   e.boss = true;
   e.bossId = def.id;
   e.maxHp = hp;
   e.hp = hp;
   e.speed = def.speed;
-  e.dmg = def.dmg;
+  e.dmg = def.dmg * (m ? m.bossDmgMul : 1);
   e.xp = 0;
   e.coinChance = 0;
   e.coinReward = def.coinReward;
@@ -55,10 +57,16 @@ export function spawnEnemy(state, def, x, y, d) {
   const e = state.pool.enemy.acquire();
   e.uid = ++state.entitySeq;
   e.kind = def.id;
-  e.emoji = def.emoji;
+  // Halloween: a tenth of the swarm shows up in costume.
+  e.emoji =
+    state.seasonal && state.seasonal.halloween && state.spawnRng.chance(0.1)
+      ? "🎃"
+      : def.emoji;
   e.size = def.size * (m ? m.enemySizeMul : 1);
   e.elite = !!def.elite;
   e.dropsChest = !!def.dropsChest;
+  e.flees = !!def.flees;
+  e.coinBurst = def.coinBurst || 0;
   e.boss = false;
   e.bossId = null;
   e.maxHp = def.hp * d.hpScale * esc * (m ? m.enemyHpMul : 1);
@@ -144,7 +152,11 @@ export function stepSpawner(state, dt) {
   let guard = 0;
   while (sp.timer <= 0) {
     if (state.enemies.length < cap) {
-      const def = pickTier(state, t);
+      let def = pickTier(state, t);
+      // Easter eggs: ~1/600 spawns is a fleeing Disco Wisp; ~1/400 zombies is Karen.
+      if (state.spawnRng.chance(1 / 600)) def = ENEMIES.disco;
+      else if (def.id === "zombie" && state.spawnRng.chance(1 / 400))
+        def = ENEMIES.karen;
       const pt = ringPoint(state, p.x, p.y, SPAWN_R);
       spawnEnemy(state, def, pt.x, pt.y, d);
     }

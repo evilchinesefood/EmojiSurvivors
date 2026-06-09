@@ -10,6 +10,7 @@ export const S = {
   VICTORY: "VICTORY",
   SHOP: "SHOP",
   SETTINGS: "SETTINGS",
+  RECORDS: "RECORDS",
 };
 
 export function makeMachine(initial = S.BOOT) {

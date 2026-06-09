@@ -31,6 +31,10 @@ function base() {
     armor: 0,
     revives: 0,
     rerolls: 0,
+    banishes: 0,
+    critChance: 0,
+    thorns: 0,
+    weaponStartLevel: 0,
   };
 }
 
@@ -72,6 +76,10 @@ export function resolve(tilt = [], ownedPassives = {}, powerGrid = {}) {
     armor: Math.max(0, acc.armor),
     revives: Math.max(0, Math.round(acc.revives)),
     rerolls: Math.max(0, Math.round(acc.rerolls)),
+    banishes: Math.max(0, Math.round(acc.banishes)),
+    critChance: Math.min(0.6, Math.max(0, acc.critChance)),
+    thorns: Math.max(0, acc.thorns),
+    weaponStartLevel: Math.max(0, Math.round(acc.weaponStartLevel)),
   };
 }
 

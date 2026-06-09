@@ -23,6 +23,16 @@ export function SettingsScreen(ctx) {
     return el;
   };
 
+  const name = h("input", {
+    type: "text",
+    class: "es-text",
+    value: ctx.meta.playerName || "",
+    maxlength: "24",
+    placeholder: "Anonymous 👻",
+    "aria-label": "Leaderboard Name",
+  });
+  name.addEventListener("change", () => ctx.meta.setPlayerName(name.value));
+
   const shake = toggle(s.shake, "shake", "Screen Shake");
   const dmg = toggle(s.damageNumbers, "damageNumbers", "Damage Numbers");
   const aim = toggle(s.manualAim, "manualAim", "Manual Aim");
@@ -64,6 +74,7 @@ export function SettingsScreen(ctx) {
       "div",
       { class: "col", style: "align-items:center" },
       row("volume", "SFX Volume", vol),
+      row("trophy", "Board Name", name),
       row("shake", "Screen Shake", shake),
       row("motion", "Reduced Motion", reduce),
       row("hash", "Damage Numbers", dmg),

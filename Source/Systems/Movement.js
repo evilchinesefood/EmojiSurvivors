@@ -1,6 +1,8 @@
 // Player + enemy movement. Player: normalized intent × speed. Enemies: seek the
 // player with soft separation (boids-lite via the spatial hash) so swarms surround
 // without stacking on one pixel.
+import { emit } from "../Engine/State.js";
+
 export function movePlayer(state, dt) {
   const p = state.player;
   const m = state.input.move;
@@ -33,6 +35,10 @@ export function stepEnemies(state, dt) {
     const d = Math.hypot(ax, ay) || 1;
     ax /= d;
     ay /= d;
+    if (e.flees) {
+      ax = -ax;
+      ay = -ay;
+    }
 
     state.hash.queryCircle(e.x, e.y, e.size, near);
     let sx = 0;
@@ -74,5 +80,34 @@ export function stepEnemies(state, dt) {
       ht[k] -= dt;
       if (ht[k] <= 0) delete ht[k];
     }
+  }
+
+  // The Auditor (tainted saves): untouchable, deals nothing, lurks ~80px off and
+  // occasionally has opinions. Reads only player position — no RNG, no balance.
+  const a = state.auditor;
+  if (a) {
+    const dx = p.x - a.x;
+    const dy = p.y - a.y;
+    const d = Math.hypot(dx, dy) || 1;
+    // Slightly faster than the player + a hard catch-up term: you cannot lose it.
+    const sp = d > 90 ? Math.max(state.stats.speed * 1.05, (d - 80) * 1.5) : 0;
+    a.x += (dx / d) * sp * dt;
+    a.y += (dy / d) * sp * dt;
+    a.whisperT -= dt;
+    if (a.whisperT <= 0) {
+      a.whisperT = 45;
+      emit(state, "whisper", { x: a.x, y: a.y - 24 });
+    }
+  }
+
+  // The Graveyard Cat (1-in-40 seeds): cosmetic companion, same follow scheme.
+  const c = state.cat;
+  if (c) {
+    const dx = p.x - c.x;
+    const dy = p.y - c.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const sp = d > 56 ? Math.max(state.stats.speed * 1.02, (d - 48) * 1.4) : 0;
+    c.x += (dx / d) * sp * dt;
+    c.y += (dy / d) * sp * dt;
   }
 }

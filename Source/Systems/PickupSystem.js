@@ -55,7 +55,9 @@ export function stepPickups(state, dt) {
     }
     const nd2 = (p.x - c.x) * (p.x - c.x) + (p.y - c.y) * (p.y - c.y);
     if (nd2 < pickR2) {
-      p.coins += Math.max(1, Math.round(c.value * state.stats.greed * coinMul));
+      p.coins += state.tainted
+        ? 1
+        : Math.max(1, Math.round(c.value * state.stats.greed * coinMul));
       emit(state, "coin", { value: c.value });
       swapPop(state.coins, i);
     }
@@ -71,7 +73,16 @@ export function stepPickups(state, dt) {
       p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.2);
       emit(state, "health");
     } else if (d.kind === "chest") {
-      const n = state.rollRng.range(1, 3);
+      if (d.mimic && d.hops > 0) {
+        // The Mimic bolts — chase it down (3 hops) for a triple payout.
+        d.hops--;
+        const a = state.combatRng.angle();
+        d.x += Math.cos(a) * 170;
+        d.y += Math.sin(a) * 170;
+        emit(state, "mimic", { x: d.x, y: d.y });
+        continue;
+      }
+      const n = d.mimic ? 3 : state.rollRng.range(1, 3);
       state.pendingLevelUps += n;
       state.awaitingLevelUp = true;
       emit(state, "chest", { levels: n });

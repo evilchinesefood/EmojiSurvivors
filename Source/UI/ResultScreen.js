@@ -15,19 +15,27 @@ export function ResultScreen(ctx) {
   const title = h(
     "div",
     { class: "title", style: "font-size:clamp(1.8rem,7vw,3rem)" },
-    endless ? "♾️" : won ? icon("trophy") : icon("skull"),
-    endless ? " Endless" : won ? " Victory!" : " You Died",
+    r.tainted ? "🤡" : endless ? "♾️" : won ? icon("trophy") : icon("skull"),
+    r.tainted
+      ? " Honk Honk."
+      : endless
+        ? " Endless"
+        : won
+          ? " Victory!"
+          : " You Died",
   );
   const sub = h(
     "div",
     { class: "subtitle" },
-    endless
-      ? "score " +
+    r.tainted
+      ? "the circus thanks you for your honesty"
+      : endless
+        ? "score " +
           r.score +
           (r.score >= r.bestScore ? " — new best!" : " · best " + r.bestScore)
-      : won
-        ? "you survived the night"
-        : "the swarm got you",
+        : won
+          ? "you survived the night"
+          : "the swarm got you",
   );
 
   const charLine = r.character

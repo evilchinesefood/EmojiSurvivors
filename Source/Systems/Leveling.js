@@ -165,8 +165,10 @@ export function levelUpChoices(state) {
     }
   }
 
-  const want =
-    3 + (state.rollRng.next() < Math.min(0.5, 0.05 + (luck - 1) * 0.4) ? 1 : 0);
+  const bonus =
+    state.rollRng.next() < Math.min(0.5, 0.05 + (luck - 1) * 0.4) ? 1 : 0;
+  // Second Sight (witch): hands always show 4 cards (never 5 — UI is sized for 4).
+  const want = Math.max(state.gimmick === "secondSight" ? 4 : 3, 3 + bonus);
   // Show evolutions first, but never let them crowd out every normal upgrade —
   // always reserve at least one slot for the weighted pool / reroll to act on.
   const chosen = forced.slice(0, Math.max(1, want - 1));

@@ -21,8 +21,12 @@ export function createRunState({
   character,
   powerGrid = {},
   modifiers = {},
+  tainted = false,
+  seasonal = {},
 }) {
   const mods = resolveModifiers(modifiers);
+  if (seasonal.friday13) mods.spawnMul *= 1.13; // unlucky night
+
   const stats = resolve(character.tilt.concat(mods.statMods), {}, powerGrid);
   stats.revives = Math.max(0, stats.revives + mods.extraRevives);
   const startLevel = mods.startLevel;
@@ -38,7 +42,14 @@ export function createRunState({
     level: startLevel,
     xp: 0,
     xpNext: xpForLevel(startLevel),
-    weapons: [{ id: character.weapon, level: 1, cd: 0, alt: 0 }],
+    weapons: [
+      {
+        id: character.weapon,
+        level: 1 + stats.weaponStartLevel,
+        cd: 0,
+        alt: 0,
+      },
+    ],
     passives: {},
     kills: 0,
     coins: 0,
@@ -80,10 +91,20 @@ export function createRunState({
     modifiers: mods,
     modifierSel: modifiers, // raw selection, for restart + result display
     endless: mods.endless,
+    tainted: !!tainted, // tampered save → Clown Mode penalties this run
+    // The Auditor: an untouchable observer that shadows tainted players.
+    auditor: tainted ? { x: -420, y: -320, whisperT: 12 } : null,
+    seasonal: {
+      halloween: !!seasonal.halloween,
+      friday13: !!seasonal.friday13,
+    },
+    // Graveyard Cat: 1-in-40 seeds gains a cosmetic companion (no RNG consumed).
+    cat: seed % 40 === 13 ? { x: -70, y: -50 } : null,
+    devil: false, // set at kill #666 — cosmetic horns for the rest of the run
     awaitingLevelUp: startLevel > 1, // Head Start grants immediate picks
     pendingLevelUps: startLevel - 1,
     rerollsLeft: stats.rerolls,
-    banishesLeft: 1, // remove an offered card from this run's pool
+    banishesLeft: 1 + stats.banishes, // remove offered cards from this run's pool
     banishedCards: new Set(), // card ids banished for the rest of the run
     entitySeq: 0, // monotonic id for pooled enemies (projectile hit-tracking)
     outcome: null, // 'victory' | 'gameover'
