@@ -24,7 +24,10 @@ function hurt(state, e, dmg) {
   if (e.dead) return;
   e.hp -= dmg;
   e.flash = 0.09;
-  emit(state, "damage", { x: e.x, y: e.y, amount: Math.round(dmg) });
+  const amount = Math.round(dmg);
+  // A "crit" is just a chunky hit relative to the target — drives gold floaters + a pop.
+  if (dmg >= e.maxHp * 0.18) emit(state, "crit", { x: e.x, y: e.y, amount });
+  else emit(state, "damage", { x: e.x, y: e.y, amount });
   if (e.hp <= 0) e.dead = true;
 }
 

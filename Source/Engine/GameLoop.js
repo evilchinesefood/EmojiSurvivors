@@ -47,6 +47,7 @@ export function createLoop(update, render) {
   let acc = 0;
   let raf = 0;
   let running = false;
+  let timescale = 1; // fast-forward: 1× / 2× / 4× — runs more fixed steps per frame
 
   function frame(nowMs) {
     if (!running) return;
@@ -54,7 +55,7 @@ export function createLoop(update, render) {
     let dt = now - last;
     last = now;
     if (dt > MAX_FRAME) dt = MAX_FRAME;
-    acc += dt;
+    acc += dt * timescale;
     let steps = 0;
     while (acc >= STEP) {
       update(STEP);
@@ -79,6 +80,12 @@ export function createLoop(update, render) {
     stop() {
       running = false;
       cancelAnimationFrame(raf);
+    },
+    setTimescale(n) {
+      timescale = n;
+    },
+    get timescale() {
+      return timescale;
     },
   };
 }

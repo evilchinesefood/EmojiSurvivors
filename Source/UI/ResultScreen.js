@@ -9,6 +9,7 @@ function mmss(sec) {
 export function ResultScreen(ctx) {
   const r = ctx.summary;
   const won = ctx.victory;
+
   const title = h(
     "div",
     { class: "title", style: "font-size:clamp(1.8rem,7vw,3rem)" },
@@ -21,10 +22,38 @@ export function ResultScreen(ctx) {
     won ? "you survived the night" : "the swarm got you",
   );
 
+  const charLine = r.character
+    ? h(
+        "div",
+        { class: "row", style: "gap:0.4rem" },
+        h(
+          "span",
+          { class: "pick-emoji", style: "font-size:1.8rem" },
+          r.character.emoji,
+        ),
+        h("strong", {}, r.character.name),
+      )
+    : null;
+
+  const pill = (it) =>
+    h(
+      "div",
+      { class: "tray-item" + (it.evolved ? " evolved" : "") },
+      it.emoji || "❔",
+      h("span", { class: "tray-lvl" }, String(it.level)),
+    );
+  const loadout = h(
+    "div",
+    { class: "hud-tray", style: "margin:0;max-width:min(560px,92vw)" },
+    (r.weapons || []).map(pill),
+    (r.passives || []).map(pill),
+  );
+
   const rows = [
     ["timer", "Time", mmss(r.time)],
     ["kills", "Kills", String(r.kills)],
     ["level", "Level", String(r.level)],
+    ["swords", "Est. DPS", String(r.dps ?? "—")],
     ["coin", "Coins earned", "+" + r.coins],
   ];
   const summary = h(
@@ -63,6 +92,8 @@ export function ResultScreen(ctx) {
     { class: "screen" },
     title,
     sub,
+    charLine,
+    loadout,
     summary,
     h("div", { class: "menu-actions" }, shop, retry, menu),
   );

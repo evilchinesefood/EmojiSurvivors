@@ -10,7 +10,9 @@ function mmss(sec) {
   return m + ":" + String(s % 60).padStart(2, "0");
 }
 
-export function makeHud(root, { onPause }) {
+const SPEEDS = [1, 2, 4];
+
+export function makeHud(root, { onPause, onSpeed }) {
   const timerEl = h("span", { class: "hud-timer" }, "0:00");
   const levelEl = h("span", {}, "1");
   const coinEl = h("span", {}, "0");
@@ -50,8 +52,20 @@ export function makeHud(root, { onPause }) {
   );
   pauseBtn.addEventListener("click", () => onPause?.());
 
+  let speedIdx = 0;
+  const speedBtn = h(
+    "button",
+    { class: "hud-speed", "aria-label": "Game speed" },
+    "1×",
+  );
+  speedBtn.addEventListener("click", () => {
+    speedIdx = (speedIdx + 1) % SPEEDS.length;
+    speedBtn.textContent = SPEEDS[speedIdx] + "×";
+    onSpeed?.(SPEEDS[speedIdx]);
+  });
+
   clear(root);
-  root.append(top, bars, tray, bossWrap, pauseBtn);
+  root.append(top, bars, tray, bossWrap, speedBtn, pauseBtn);
 
   let traySig = "";
 
@@ -103,6 +117,10 @@ export function makeHud(root, { onPause }) {
   return {
     root,
     update,
+    resetSpeed() {
+      speedIdx = 0;
+      speedBtn.textContent = "1×";
+    },
     show() {
       root.hidden = false;
     },

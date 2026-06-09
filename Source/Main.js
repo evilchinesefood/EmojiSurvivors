@@ -23,8 +23,21 @@ import { levelUpChoices, applyChoice } from "./Systems/Leveling.js";
 import { makeSfx } from "./Audio/Sfx.js";
 import { makeMeta } from "./Meta/Meta.js";
 import { CHARACTERS, STARTER_ID } from "./Content/Characters.js";
-import { WEAPONS } from "./Content/Weapons.js";
+import { WEAPONS, scaleWeapon } from "./Content/Weapons.js";
 import { PASSIVES } from "./Content/Passives.js";
+
+// Display heuristic (not sim logic): rough damage-per-second of the final build.
+function estimateDps(s) {
+  let dps = 0;
+  for (const w of s.player.weapons) {
+    const def = WEAPONS[w.id];
+    if (!def) continue;
+    const sc = scaleWeapon(def, w.level);
+    const interval = Math.max(0.1, (sc.interval || 1) / s.stats.cooldown);
+    dps += (sc.damage * s.stats.might * sc.count) / interval;
+  }
+  return Math.round(dps);
+}
 
 if ("serviceWorker" in navigator) {
   addEventListener("load", () =>
@@ -59,7 +72,10 @@ let lastSummary = { time: 0, kills: 0, level: 1, coins: 0 };
 const renderer = makeRenderer(ctx);
 const particles = makeParticles();
 const fx = makeFx();
-const hud = makeHud(hudRoot, { onPause });
+const hud = makeHud(hudRoot, {
+  onPause,
+  onSpeed: (n) => loop.setTimescale(n),
+});
 const sfx = makeSfx(() => meta.settings.sfx);
 
 const input = makeInput({
@@ -84,7 +100,18 @@ function handleEvents() {
     switch (ev.type) {
       case "damage":
         if (meta.settings.damageNumbers && Math.random() < 0.5)
-          particles.text(ev.x, ev.y - 12, String(ev.amount), "#fff");
+          particles.text(
+            ev.x,
+            ev.y - 12,
+            String(ev.amount),
+            "#fff",
+            Math.min(11 + Math.sqrt(ev.amount), 24),
+          );
+        break;
+      case "crit":
+        if (meta.settings.damageNumbers)
+          particles.text(ev.x, ev.y - 14, String(ev.amount), "#ffd86e", 28);
+        if (shakeOn) fx.shake(0.12);
         break;
       case "kill":
         particles.puff(
@@ -150,6 +177,7 @@ function startRun(characterId, runLength) {
     powerGrid: meta.powerGrid,
   });
   camera.follow(state.player.x, state.player.y);
+  hud.resetSpeed();
   machine.set(S.PLAYING);
 }
 
@@ -175,7 +203,19 @@ function endRun() {
     kills: state.player.kills,
     level: state.player.level,
     coins: state.player.coins,
+    character: state.character,
+    dps: estimateDps(state),
+    weapons: state.player.weapons.map((w) => ({
+      emoji: WEAPONS[w.id]?.emoji,
+      level: w.level,
+      evolved: !!WEAPONS[w.id]?.evolved,
+    })),
+    passives: Object.keys(state.player.passives).map((id) => ({
+      emoji: PASSIVES[id]?.emoji,
+      level: state.player.passives[id],
+    })),
   };
+  loop.setTimescale(1); // reset fast-forward when a run ends
   machine.set(won ? S.VICTORY : S.GAMEOVER);
 }
 

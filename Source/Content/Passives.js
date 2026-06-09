@@ -58,6 +58,25 @@ export const PASSIVES = {
     max: 5,
     mods: [{ stat: "speedMul", op: "mul", value: 1.08 }],
   },
+  ironSkin: {
+    id: "ironSkin",
+    name: "Iron Skin",
+    emoji: "🪨",
+    desc: "+1 armor / level",
+    max: 3,
+    mods: [{ stat: "armor", op: "add", value: 1 }],
+  },
+  luckyCharm: {
+    id: "luckyCharm",
+    name: "Lucky Charm",
+    emoji: "🃏",
+    desc: "+10% luck, +6% coins",
+    max: 4,
+    mods: [
+      { stat: "luck", op: "mul", value: 1.1 },
+      { stat: "greed", op: "mul", value: 1.06 },
+    ],
+  },
 };
 
 export const PASSIVE_IDS = Object.keys(PASSIVES);

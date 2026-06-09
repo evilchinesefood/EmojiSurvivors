@@ -60,6 +60,21 @@ describe("Combat", () => {
     expect(s.gems.length).toBe(1);
   });
 
+  it("a hit >=18% of max HP emits a crit (not a plain damage) event", () => {
+    const s = run("mage");
+    s.enemies.push(makeEnemy({ hp: 50, maxHp: 50 })); // bolt ~14 dmg >= 50*0.18=9
+    s.player.weapons[0] = { id: "bolt", level: 1, cd: 0, alt: 0 };
+    let sawCrit = false;
+    for (let i = 0; i < 20 && !sawCrit; i++) {
+      rebuild(s);
+      stepWeapons(s, 1 / 60);
+      stepCombat(s, 1 / 60);
+      if (s.events.some((e) => e.type === "crit")) sawCrit = true;
+      s.events.length = 0;
+    }
+    expect(sawCrit).toBeTruthy();
+  });
+
   it("enemy contact damages the player, then i-frames block a second hit", () => {
     const s = run("mage");
     s.enemies.push(makeEnemy({ x: 0, y: 0, hp: 9999, maxHp: 9999, dmg: 10 }));

@@ -152,3 +152,22 @@
 .hud-pause:active {
   transform: scale(0.94);
 }
+.hud-speed {
+  position: fixed;
+  top: max(0.5rem, env(safe-area-inset-top));
+  right: calc(0.6rem + var(--tap) + 0.4rem);
+  pointer-events: auto;
+  height: var(--tap);
+  min-width: var(--tap);
+  padding: 0 0.5rem;
+  border-radius: 10px;
+  background: rgba(20, 14, 30, 0.78);
+  border: 1px solid var(--line);
+  color: var(--bone);
+  font-weight: 800;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+.hud-speed:active {
+  transform: scale(0.94);
+}

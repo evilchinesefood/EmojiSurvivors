@@ -48,4 +48,15 @@ describe("StatsModel.resolve", () => {
     expect(s.revives).toBe(1);
     expect(s.rerolls).toBe(2);
   });
+
+  it("Iron Skin adds flat armor per level (stacks with tilt)", () => {
+    expect(resolve([], { ironSkin: 2 }, {}).armor).toBe(2);
+    expect(resolve(CHARACTERS.knight.tilt, { ironSkin: 1 }, {}).armor).toBe(2);
+  });
+
+  it("Lucky Charm folds luck and greed together", () => {
+    const s = resolve([], { luckyCharm: 3 }, {});
+    expect(s.luck).toBeCloseTo(Math.pow(1.1, 3), 1e-9);
+    expect(s.greed).toBeCloseTo(Math.pow(1.06, 3), 1e-9);
+  });
 });

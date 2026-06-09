@@ -70,15 +70,16 @@ export function makeParticles() {
     }
   }
 
-  function text(x, y, str, color) {
+  function text(x, y, str, color, size = 13) {
+    const big = size > 18;
     add({
       x: x + (Math.random() * 10 - 5),
       y,
       vx: 0,
-      vy: -42,
-      life: 0.65,
-      maxLife: 0.65,
-      size: 13,
+      vy: big ? -58 : -42,
+      life: big ? 0.8 : 0.65,
+      maxLife: big ? 0.8 : 0.65,
+      size,
       color,
       text: str,
       drag: 1,
