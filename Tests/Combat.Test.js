@@ -98,6 +98,17 @@ describe("Combat", () => {
     expect(s.player.hp).toBe(before - 1);
   });
 
+  it("manual aim fires toward the cursor, ignoring the nearest enemy", () => {
+    const s = run("mage");
+    s.enemies.push(makeEnemy({ x: 200, y: 0 })); // nearest is to the right
+    rebuild(s);
+    s.player.weapons[0] = { id: "bolt", level: 1, cd: 0, alt: 0 };
+    s.input.aim = { x: -1, y: 0 }; // but we aim left
+    stepWeapons(s, 1 / 60);
+    expect(s.projectiles.length > 0).toBeTruthy();
+    expect(s.projectiles[0].vx < 0).toBeTruthy(); // flew left, toward the cursor
+  });
+
   it("revive consumes a life before game over", () => {
     const s = run("mage");
     s.stats.revives = 1;

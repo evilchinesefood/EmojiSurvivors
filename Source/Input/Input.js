@@ -16,6 +16,7 @@ const KEYS = {
 export function makeInput({ canvas, isPlaying, onPause }) {
   const held = new Set();
   let pointer = null; // {x, y} in CSS px, while down
+  let hover = null; // {x, y} latest cursor pos (desktop), for manual aim
 
   addEventListener("keydown", (e) => {
     if (e.repeat) return;
@@ -45,6 +46,8 @@ export function makeInput({ canvas, isPlaying, onPause }) {
   });
   canvas.addEventListener("pointermove", (e) => {
     if (pointer) setPointer(e);
+    const r = canvas.getBoundingClientRect();
+    hover = { x: e.clientX - r.left, y: e.clientY - r.top };
   });
   const drop = () => (pointer = null);
   canvas.addEventListener("pointerup", drop);
@@ -73,5 +76,23 @@ export function makeInput({ canvas, isPlaying, onPause }) {
     return { x: 0, y: 0 };
   }
 
-  return { getIntent, clear: () => (pointer = null) };
+  // Manual aim: direction from player to the cursor (desktop hover) or held finger.
+  function getAim(camera, player) {
+    const src = hover || pointer;
+    if (!src) return null;
+    const dx = camera.toWorldX(src.x) - player.x;
+    const dy = camera.toWorldY(src.y) - player.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 4) return null;
+    return { x: dx / d, y: dy / d };
+  }
+
+  return {
+    getIntent,
+    getAim,
+    clear: () => {
+      pointer = null;
+      hover = null;
+    },
+  };
 }

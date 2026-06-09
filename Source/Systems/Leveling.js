@@ -23,7 +23,13 @@ const FILLERS = [
 
 export function recomputeStats(state) {
   const p = state.player;
-  const stats = resolve(state.character.tilt, p.passives, state.powerGrid);
+  const mods = state.modifiers;
+  const stats = resolve(
+    state.character.tilt.concat(mods ? mods.statMods : []),
+    p.passives,
+    state.powerGrid,
+  );
+  if (mods) stats.revives = Math.max(0, stats.revives + mods.extraRevives);
   const oldMax = p.maxHp;
   state.stats = stats;
   p.maxHp = stats.maxHp;
@@ -66,6 +72,11 @@ export function levelUpChoices(state) {
   const luck = state.stats.luck;
   const cand = [];
   const ban = state.banishedCards; // ids removed from this run's pool
+  const m = state.modifiers;
+  const maxWLvl = m ? m.maxWeaponLevel : MAX_WEAPON_LEVEL;
+  const maxW = m ? m.maxWeapons : WEAPON_SLOTS;
+  const maxP = m ? m.maxPassives : PASSIVE_SLOTS;
+  const oneWeapon = m ? m.oneWeapon : false;
 
   // Evolutions are forced to the front — rare and exciting, never buried.
   const forced = eligibleEvolutions(state)
@@ -81,7 +92,7 @@ export function levelUpChoices(state) {
 
   for (const w of p.weapons) {
     const def = WEAPONS[w.id];
-    if (def && w.level < MAX_WEAPON_LEVEL && !ban.has(w.id))
+    if (def && w.level < maxWLvl && !ban.has(w.id))
       cand.push({
         kind: "weapon-up",
         id: w.id,
@@ -104,7 +115,7 @@ export function levelUpChoices(state) {
         weight: 14,
       });
   }
-  if (p.weapons.length < WEAPON_SLOTS) {
+  if (!oneWeapon && p.weapons.length < maxW) {
     for (const id of BASE_WEAPON_IDS) {
       const owns = p.weapons.some(
         (w) => w.id === id || WEAPONS[id].evolvesTo === w.id,
@@ -122,7 +133,7 @@ export function levelUpChoices(state) {
       }
     }
   }
-  if (Object.keys(p.passives).length < PASSIVE_SLOTS) {
+  if (Object.keys(p.passives).length < maxP) {
     for (const id of PASSIVE_IDS) {
       if (!(id in p.passives) && !ban.has(id)) {
         const pd = PASSIVES[id];
@@ -169,7 +180,10 @@ export function applyChoice(state, c) {
       break;
     case "weapon-up": {
       const w = c.w || p.weapons.find((x) => x.id === c.id);
-      if (w && w.level < MAX_WEAPON_LEVEL) w.level += 1;
+      const cap = state.modifiers
+        ? state.modifiers.maxWeaponLevel
+        : MAX_WEAPON_LEVEL;
+      if (w && w.level < cap) w.level += 1;
       break;
     }
     case "passive-new":

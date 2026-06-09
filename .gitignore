@@ -16,3 +16,7 @@ node_modules/
 
 # Font Awesome / Web Awesome private registry auth (never commit)
 .npmrc
+
+# Local agent instructions + planning docs (never deploy/publish)
+CLAUDE.md
+docs/

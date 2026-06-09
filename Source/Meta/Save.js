@@ -2,7 +2,7 @@
 // forward and never crash — load always returns a complete, valid save. Storage is a
 // {getItem,setItem} seam so it's node-testable with an in-memory stub.
 export const SAVE_KEY = "emojisurvivors-save";
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export function defaultSave() {
   return {
@@ -10,7 +10,11 @@ export function defaultSave() {
     coins: 0,
     powerGrid: {},
     bestTimes: { 300: 0, 600: 0, 900: 0 },
-    settings: { sfx: 0.6, shake: true, damageNumbers: true },
+    plays: 0, // runs started — gates some modifier unlocks
+    wins: 0, // boss kills — gates the rest
+    bestScore: 0, // best Endless score (kills + seconds)
+    lastModifiers: {}, // remembered selection for the next run
+    settings: { sfx: 0.6, shake: true, damageNumbers: true, manualAim: false },
   };
 }
 
@@ -18,9 +22,10 @@ export function defaultSave() {
 export function migrate(raw) {
   const d = defaultSave();
   if (!raw || typeof raw !== "object") return d;
+  const num = (v) => (Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
   return {
     version: SAVE_VERSION,
-    coins: Number.isFinite(raw.coins) ? Math.max(0, Math.floor(raw.coins)) : 0,
+    coins: num(raw.coins),
     powerGrid:
       raw.powerGrid && typeof raw.powerGrid === "object"
         ? { ...raw.powerGrid }
@@ -31,6 +36,13 @@ export function migrate(raw) {
         ? raw.bestTimes
         : {}),
     },
+    plays: num(raw.plays),
+    wins: num(raw.wins),
+    bestScore: num(raw.bestScore),
+    lastModifiers:
+      raw.lastModifiers && typeof raw.lastModifiers === "object"
+        ? { ...raw.lastModifiers }
+        : {},
     settings: {
       ...d.settings,
       ...(raw.settings && typeof raw.settings === "object" ? raw.settings : {}),

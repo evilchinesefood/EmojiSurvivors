@@ -13,6 +13,8 @@ export function spawnBoss(state) {
   for (const e of state.enemies) state.pool.enemy.release(e);
   state.enemies.length = 0;
   const def = bossFor(state.runLength);
+  const m = state.modifiers;
+  const hp = def.hp * (m ? m.bossHpMul : 1);
   const p = state.player;
   const a = state.spawnRng.angle();
   const e = state.pool.enemy.acquire();
@@ -25,8 +27,8 @@ export function spawnBoss(state) {
   e.dropsChest = false;
   e.boss = true;
   e.bossId = def.id;
-  e.maxHp = def.hp;
-  e.hp = def.hp;
+  e.maxHp = hp;
+  e.hp = hp;
   e.speed = def.speed;
   e.dmg = def.dmg;
   e.xp = 0;
@@ -48,19 +50,25 @@ export function spawnBoss(state) {
 }
 
 export function spawnEnemy(state, def, x, y, d) {
+  const m = state.modifiers;
+  const esc = state.spawn.esc || 1; // endless escalation (1 normally)
   const e = state.pool.enemy.acquire();
   e.uid = ++state.entitySeq;
   e.kind = def.id;
   e.emoji = def.emoji;
-  e.size = def.size;
+  e.size = def.size * (m ? m.enemySizeMul : 1);
   e.elite = !!def.elite;
   e.dropsChest = !!def.dropsChest;
   e.boss = false;
   e.bossId = null;
-  e.maxHp = def.hp * d.hpScale;
+  e.maxHp = def.hp * d.hpScale * esc * (m ? m.enemyHpMul : 1);
   e.hp = e.maxHp;
-  e.speed = def.speed * (def.elite ? 0.9 : 1) * d.speedScale;
-  e.dmg = def.dmg * d.dmgScale;
+  e.speed =
+    def.speed *
+    (def.elite ? 0.9 : 1) *
+    d.speedScale *
+    (m ? m.enemySpeedMul : 1);
+  e.dmg = def.dmg * d.dmgScale * (m ? m.enemyDmgMul : 1);
   e.xp = def.xp;
   e.coinChance = def.coinChance;
   e.x = x;
@@ -114,7 +122,9 @@ function spawnWave(state, t, d) {
 
 export function stepSpawner(state, dt) {
   if (state.spawn.bossSpawned) return; // boss phase clears normal spawns
-  if (state.time >= state.runLength) {
+  const m = state.modifiers;
+  // Endless never ends — it just keeps escalating; everyone else meets the boss.
+  if (!state.endless && state.time >= state.runLength) {
     spawnBoss(state);
     return;
   }
@@ -122,17 +132,22 @@ export function stepSpawner(state, dt) {
   const d = difficulty(t);
   const sp = state.spawn;
   const p = state.player;
+  const spawnMul = m ? m.spawnMul : 1;
+  const bossRush = m ? m.bossRush : false;
+  // Endless: ramp HP/density past the deadline (every 240s ≈ +100% enemy HP).
+  sp.esc = state.endless ? 1 + Math.max(0, t - state.runLength) / 240 : 1;
+  const cap = Math.round(d.cap * spawnMul);
 
   sp.timer -= dt;
   let guard = 0;
   while (sp.timer <= 0) {
-    if (state.enemies.length < d.cap) {
+    if (state.enemies.length < cap) {
       const def = pickTier(state, t);
       const pt = ringPoint(state, p.x, p.y, SPAWN_R);
       spawnEnemy(state, def, pt.x, pt.y, d);
     }
-    sp.timer += d.spawnInterval;
-    if (++guard > 40) break;
+    sp.timer += d.spawnInterval / spawnMul;
+    if (++guard > 80) break;
   }
 
   sp.waveTimer -= dt;
@@ -142,10 +157,10 @@ export function stepSpawner(state, dt) {
   }
 
   for (const id of ELITE_IDS) {
-    if (t < ENEMIES[id].unlockAt) continue;
+    if (!bossRush && t < ENEMIES[id].unlockAt) continue;
     sp.eliteTimers[id] -= dt;
     if (sp.eliteTimers[id] <= 0) {
-      sp.eliteTimers[id] += 26;
+      sp.eliteTimers[id] += bossRush ? 9 : 26;
       const pt = ringPoint(state, p.x, p.y, SPAWN_R);
       spawnEnemy(state, ENEMIES[id], pt.x, pt.y, d);
     }

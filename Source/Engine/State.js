@@ -6,6 +6,7 @@ import { resolve, magnetRadius, pickupRadius } from "../Systems/StatsModel.js";
 import { xpForLevel } from "../Content/Curve.js";
 import { makeSpatialHash } from "../World/SpatialHash.js";
 import { makePool } from "../World/Pool.js";
+import { resolveModifiers } from "../Content/Modifiers.js";
 
 // Swap-pop removal: O(1), order-independent (fine for unordered entity arrays).
 export function swapPop(arr, i) {
@@ -14,8 +15,17 @@ export function swapPop(arr, i) {
   arr.pop();
 }
 
-export function createRunState({ seed, runLength, character, powerGrid = {} }) {
-  const stats = resolve(character.tilt, {}, powerGrid);
+export function createRunState({
+  seed,
+  runLength,
+  character,
+  powerGrid = {},
+  modifiers = {},
+}) {
+  const mods = resolveModifiers(modifiers);
+  const stats = resolve(character.tilt.concat(mods.statMods), {}, powerGrid);
+  stats.revives = Math.max(0, stats.revives + mods.extraRevives);
+  const startLevel = mods.startLevel;
   const player = {
     x: 0,
     y: 0,
@@ -25,9 +35,9 @@ export function createRunState({ seed, runLength, character, powerGrid = {} }) {
     maxHp: stats.maxHp,
     invuln: 0,
     facing: { x: 0, y: 1 },
-    level: 1,
+    level: startLevel,
     xp: 0,
-    xpNext: xpForLevel(1),
+    xpNext: xpForLevel(startLevel),
     weapons: [{ id: character.weapon, level: 1, cd: 0, alt: 0 }],
     passives: {},
     kills: 0,
@@ -65,10 +75,13 @@ export function createRunState({ seed, runLength, character, powerGrid = {} }) {
     hazards: [], // one-shot burst visuals (explosion/whip), short-lived, render only
     auraViz: [], // steady player-centered aura glows (continuous weapons), render only
     strikes: [], // one-shot AoE damage events emitted by weapons, consumed by combat
-    input: { move: { x: 0, y: 0 } },
+    input: { move: { x: 0, y: 0 }, aim: null },
     events: [],
-    awaitingLevelUp: false,
-    pendingLevelUps: 0,
+    modifiers: mods,
+    modifierSel: modifiers, // raw selection, for restart + result display
+    endless: mods.endless,
+    awaitingLevelUp: startLevel > 1, // Head Start grants immediate picks
+    pendingLevelUps: startLevel - 1,
     rerollsLeft: stats.rerolls,
     banishesLeft: 1, // remove an offered card from this run's pool
     banishedCards: new Set(), // card ids banished for the rest of the run

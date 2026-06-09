@@ -1,4 +1,4 @@
-const CACHE = "emojisurvivors-v13";
+const CACHE = "emojisurvivors-v14";
 const SHELL_FIRST_PARTY = [
   "./",
   "./Index.html",
@@ -31,6 +31,7 @@ const SHELL_FIRST_PARTY = [
   "./Source/Content/Bosses.js",
   "./Source/Content/PowerGrid.js",
   "./Source/Content/Curve.js",
+  "./Source/Content/Modifiers.js",
   // Render
   "./Source/Render/Renderer.js",
   "./Source/Render/Particles.js",

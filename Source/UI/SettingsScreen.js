@@ -25,6 +25,11 @@ export function SettingsScreen(ctx) {
     ctx.meta.setSetting("damageNumbers", dmg.checked),
   );
 
+  const aim = h("wa-switch", s.manualAim ? { checked: true } : {});
+  aim.addEventListener("change", () =>
+    ctx.meta.setSetting("manualAim", aim.checked),
+  );
+
   const row = (ic, label, control) =>
     h(
       "div",
@@ -55,6 +60,7 @@ export function SettingsScreen(ctx) {
       row("volume", "SFX Volume", vol),
       row("shake", "Screen Shake", shake),
       row("hash", "Damage Numbers", dmg),
+      row("swords", "Manual Aim", aim),
     ),
     back,
   );

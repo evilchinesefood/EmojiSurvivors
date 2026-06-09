@@ -168,14 +168,16 @@ function trayItems() {
   return items;
 }
 
-function startRun(characterId, runLength) {
+function startRun(characterId, runLength, modifiers = {}) {
   const character = CHARACTERS[characterId] || CHARACTERS[STARTER_ID];
   state = createRunState({
     seed: (Date.now() ^ (performance.now() * 1000)) >>> 0,
     runLength,
     character,
     powerGrid: meta.powerGrid,
+    modifiers,
   });
+  meta.recordPlay(modifiers);
   camera.follow(state.player.x, state.player.y);
   hud.resetSpeed();
   machine.set(S.PLAYING);
@@ -188,7 +190,7 @@ function resume() {
   if (machine.is(S.PAUSED)) machine.set(S.PLAYING);
 }
 function restart() {
-  if (state) startRun(state.character.id, state.runLength);
+  if (state) startRun(state.character.id, state.runLength, state.modifierSel);
 }
 function quitToMenu() {
   state = null;
@@ -197,7 +199,12 @@ function quitToMenu() {
 
 function endRun() {
   const won = state.outcome === "victory";
+  const prevWins = meta.wins;
   meta.bankRun(state.runLength, state.player.coins, state.time);
+  if (won) meta.recordWin();
+  const score = state.endless ? Math.floor(state.player.kills + state.time) : 0;
+  if (state.endless) meta.recordScore(score);
+  const newUnlocks = meta.newlyUnlocked(meta.plays, prevWins);
   lastSummary = {
     time: state.time,
     kills: state.player.kills,
@@ -205,6 +212,11 @@ function endRun() {
     coins: state.player.coins,
     character: state.character,
     dps: estimateDps(state),
+    endless: state.endless,
+    score,
+    bestScore: meta.bestScore,
+    modifiers: state.modifiers.active.slice(),
+    newUnlocks: newUnlocks.map((d) => ({ emoji: d.emoji, name: d.name })),
     weapons: state.player.weapons.map((w) => ({
       emoji: WEAPONS[w.id]?.emoji,
       level: w.level,
@@ -223,6 +235,15 @@ function pickChoice(c) {
   applyChoice(state, c);
   if (state.awaitingLevelUp) shell.render();
   else machine.set(S.PLAYING);
+}
+
+// Randomizer modifier: resolve every queued pick with a random offered card, no UI.
+function autoPickLevelUps() {
+  let guard = 0;
+  while (state.awaitingLevelUp && guard++ < 50) {
+    const ch = levelUpChoices(state);
+    applyChoice(state, ch[state.rollRng.range(0, ch.length - 1)]);
+  }
 }
 
 const screens = {
@@ -252,7 +273,8 @@ const screens = {
   [S.CONFIG]: () =>
     ConfigScreen({
       character: selectedCharId,
-      onStart: (len) => startRun(selectedCharId, len),
+      meta,
+      onStart: (len, mods) => startRun(selectedCharId, len, mods),
       onBack: () => machine.set(S.SELECT),
     }),
   [S.PAUSED]: () =>
@@ -313,11 +335,17 @@ const loop = createLoop(
   (dt) => {
     if (machine.is(S.PLAYING)) {
       state.input.move = input.getIntent(camera, state.player);
+      state.input.aim = meta.settings.manualAim
+        ? input.getAim(camera, state.player)
+        : null;
       stepSim(state, dt);
       handleEvents();
       particles.update(dt);
       if (state.outcome) endRun();
-      else if (state.awaitingLevelUp) machine.set(S.LEVELUP);
+      else if (state.awaitingLevelUp) {
+        if (state.modifiers.randomizer) autoPickLevelUps();
+        else machine.set(S.LEVELUP);
+      }
     }
     // Decay shake every frame (even paused/overlay) so frozen frames settle.
     fx.update(dt);

@@ -16,6 +16,9 @@ function vacuumToward(item, p, dt) {
 
 export function stepPickups(state, dt) {
   const p = state.player;
+  const m = state.modifiers;
+  const xpMul = m ? m.xpMul : 1;
+  const coinMul = m ? m.coinMul : 1;
   const magR = p.magnetR;
   const pickR = p.pickupR + 14;
   const magR2 = magR * magR;
@@ -33,7 +36,7 @@ export function stepPickups(state, dt) {
       dy = p.y - g.y;
     }
     if (dx * dx + dy * dy < pickR2) {
-      p.xp += g.value * state.stats.growth;
+      p.xp += g.value * state.stats.growth * xpMul;
       emit(state, "gem", { value: g.value });
       state.pool.gem.release(g);
       swapPop(state.gems, i);
@@ -52,7 +55,7 @@ export function stepPickups(state, dt) {
     }
     const nd2 = (p.x - c.x) * (p.x - c.x) + (p.y - c.y) * (p.y - c.y);
     if (nd2 < pickR2) {
-      p.coins += Math.max(1, Math.round(c.value * state.stats.greed));
+      p.coins += Math.max(1, Math.round(c.value * state.stats.greed * coinMul));
       emit(state, "coin", { value: c.value });
       swapPop(state.coins, i);
     }

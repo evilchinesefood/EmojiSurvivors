@@ -114,15 +114,21 @@ function fire(state, w, def, sc, stats, dm) {
 
   switch (def.behavior) {
     case "aimed": {
-      const t = nearest(state);
+      const aim = state.input.aim; // manual aim overrides auto-target
       let dx = p.facing.x;
       let dy = p.facing.y;
-      if (t) {
-        dx = t.x - p.x;
-        dy = t.y - p.y;
-        const d = Math.hypot(dx, dy) || 1;
-        dx /= d;
-        dy /= d;
+      if (aim) {
+        dx = aim.x;
+        dy = aim.y;
+      } else {
+        const t = nearest(state);
+        if (t) {
+          dx = t.x - p.x;
+          dy = t.y - p.y;
+          const d = Math.hypot(dx, dy) || 1;
+          dx /= d;
+          dy /= d;
+        }
       }
       const base = Math.atan2(dy, dx);
       const spr = count > 1 ? 0.16 : 0;
@@ -146,7 +152,10 @@ function fire(state, w, def, sc, stats, dm) {
       break;
     }
     case "spread": {
-      const a0 = Math.atan2(p.facing.y, p.facing.x);
+      const aim = state.input.aim;
+      const a0 = aim
+        ? Math.atan2(aim.y, aim.x)
+        : Math.atan2(p.facing.y, p.facing.x);
       const width = def.spread * Math.max(1, count - 1);
       for (let i = 0; i < count; i++) {
         const a = count > 1 ? a0 + (i / (count - 1) - 0.5) * width : a0;

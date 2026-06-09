@@ -71,7 +71,9 @@ export function makeHud(root, { onPause, onSpeed }) {
 
   function update(state, trayItems) {
     const p = state.player;
-    timerEl.textContent = mmss(state.time);
+    timerEl.textContent = state.endless
+      ? "♾️ " + mmss(state.time)
+      : mmss(state.time);
     levelEl.textContent = String(p.level);
     coinEl.textContent = String(p.coins);
     const hpPct = Math.max(0, Math.min(1, p.hp / p.maxHp));

@@ -1,5 +1,6 @@
 import { h } from "./Dom.js";
 import { icon } from "./Icons.js";
+import { MOD_DEFS } from "../Content/Modifiers.js";
 
 function mmss(sec) {
   const s = Math.max(0, Math.floor(sec));
@@ -9,17 +10,24 @@ function mmss(sec) {
 export function ResultScreen(ctx) {
   const r = ctx.summary;
   const won = ctx.victory;
+  const endless = !!r.endless;
 
   const title = h(
     "div",
     { class: "title", style: "font-size:clamp(1.8rem,7vw,3rem)" },
-    won ? icon("trophy") : icon("skull"),
-    won ? " Victory!" : " You Died",
+    endless ? "♾️" : won ? icon("trophy") : icon("skull"),
+    endless ? " Endless" : won ? " Victory!" : " You Died",
   );
   const sub = h(
     "div",
     { class: "subtitle" },
-    won ? "you survived the night" : "the swarm got you",
+    endless
+      ? "score " +
+          r.score +
+          (r.score >= r.bestScore ? " — new best!" : " · best " + r.bestScore)
+      : won
+        ? "you survived the night"
+        : "the swarm got you",
   );
 
   const charLine = r.character
@@ -56,6 +64,7 @@ export function ResultScreen(ctx) {
     ["swords", "Est. DPS", String(r.dps ?? "—")],
     ["coin", "Coins earned", "+" + r.coins],
   ];
+  if (endless) rows.unshift(["records", "Score", String(r.score)]);
   const summary = h(
     "div",
     { class: "summary" },
@@ -64,6 +73,36 @@ export function ResultScreen(ctx) {
       h("div", { class: "v" }, v),
     ]),
   );
+
+  const mods =
+    r.modifiers && r.modifiers.length
+      ? h(
+          "div",
+          { class: "row", style: "gap:.3rem;flex-wrap:wrap;max-width:92vw" },
+          r.modifiers.map((id) =>
+            h(
+              "span",
+              { class: "pick-tag" },
+              MOD_DEFS[id] ? MOD_DEFS[id].emoji + " " + MOD_DEFS[id].name : id,
+            ),
+          ),
+        )
+      : null;
+
+  const unlocks =
+    r.newUnlocks && r.newUnlocks.length
+      ? h(
+          "div",
+          {
+            class: "row",
+            style: "gap:.4rem;flex-wrap:wrap;justify-content:center",
+          },
+          h("span", { class: "gold" }, "🔓 Unlocked:"),
+          r.newUnlocks.map((u) =>
+            h("span", { class: "pick-tag gold" }, u.emoji + " " + u.name),
+          ),
+        )
+      : null;
 
   const shop = h(
     "wa-button",
@@ -92,8 +131,10 @@ export function ResultScreen(ctx) {
     { class: "screen" },
     title,
     sub,
+    unlocks,
     charLine,
     loadout,
+    mods,
     summary,
     h("div", { class: "menu-actions" }, shop, retry, menu),
   );

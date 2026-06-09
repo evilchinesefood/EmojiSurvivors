@@ -170,6 +170,25 @@
   display: flex;
   gap: 0.5rem;
 }
+.mod-panel {
+  width: min(520px, 94vw);
+  --spacing: 0.6rem;
+}
+.mod-panel::part(base) {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.mod-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.mod-list .grid-row {
+  padding: 0.45rem 0.6rem;
+}
 .summary {
   display: grid;
   grid-template-columns: auto auto;

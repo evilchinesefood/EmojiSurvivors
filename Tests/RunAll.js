@@ -17,5 +17,6 @@ import "./Boss.Test.js";
 import "./Save.Test.js";
 import "./Meta.Test.js";
 import "./Content.Test.js";
+import "./Modifiers.Test.js";
 
 run(process.argv[2]);
