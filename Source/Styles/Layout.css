@@ -227,6 +227,26 @@
   padding: 0.6rem 0.2rem;
   border-bottom: 1px solid var(--line);
 }
+/* Web Awesome button polish: more icon↔label breathing room, and force the icon's
+   duotone layers to currentColor so they stay visible on every button variant (the
+   themed secondary tone matched some button backgrounds) and follow hover color. */
+wa-button [slot="start"] {
+  margin-inline-end: 14px;
+}
+wa-button i.fa-duotone {
+  --fa-primary-color: currentColor !important;
+  --fa-secondary-color: currentColor !important;
+  --fa-secondary-opacity: 0.5 !important;
+}
+
+/* Level-up overlay: top-anchored so the title can't overlap the choice cards on
+   shorter screens (centered overflow used to ride up behind them). */
+.screen.levelup {
+  justify-content: flex-start;
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+  gap: 1.2rem;
+}
+
 .es-range {
   width: 200px;
   accent-color: var(--arcane);

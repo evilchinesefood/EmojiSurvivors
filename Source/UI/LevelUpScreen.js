@@ -46,5 +46,5 @@ export function LevelUpScreen(ctx) {
     rb.addEventListener("click", () => ctx.onReroll());
     kids.push(rb);
   }
-  return h("div", { class: "screen screen-dim" }, kids);
+  return h("div", { class: "screen screen-dim levelup" }, kids);
 }

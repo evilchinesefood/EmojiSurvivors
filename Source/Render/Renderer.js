@@ -8,6 +8,11 @@ const G = 64;
 export function makeRenderer(ctx) {
   function emoji(ch, sx, sy, size) {
     ctx.font = size + "px " + EMOJI_FONT;
+    // Color emoji honor the fill's ALPHA: the hazard pass (every weapon fire) leaves
+    // fillStyle at a low-alpha color, which made actors drawn after it render ~10%
+    // opaque — a per-attack flash. Force full opacity for every emoji.
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#fff";
     ctx.fillText(ch, sx, sy);
   }
 
