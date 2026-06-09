@@ -239,12 +239,11 @@ wa-button i.fa-duotone {
   --fa-secondary-opacity: 0.5 !important;
 }
 
-/* Level-up overlay: top-anchored so the title can't overlap the choice cards on
-   shorter screens (centered overflow used to ride up behind them). */
-.screen.levelup {
-  justify-content: flex-start;
-  padding-top: max(1.5rem, env(safe-area-inset-top));
-  gap: 1.2rem;
+/* Level-up overlay: keep it centered (default), just push the choice cards clear of
+   the title — they used to touch/overlap. Responsive so it doesn't over-push on short
+   mobile screens. */
+.screen.levelup .choice-grid {
+  margin-top: clamp(48px, 8vh, 80px);
 }
 
 .es-range {

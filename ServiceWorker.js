@@ -1,4 +1,4 @@
-const CACHE = "emojisurvivors-v5";
+const CACHE = "emojisurvivors-v6";
 const SHELL_FIRST_PARTY = [
   "./",
   "./Index.html",
