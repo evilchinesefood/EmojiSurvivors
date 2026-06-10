@@ -17,6 +17,41 @@ export function makeInput({ canvas, isPlaying, onPause }) {
   const held = new Set();
   let pointer = null; // {x, y} in CSS px, while down
   let hover = null; // {x, y} latest cursor pos (desktop), for manual aim
+  let padX = 0; // gamepad left stick → movement (world axes)
+  let padY = 0;
+  let padAim = null; // right stick → aim direction (used when Manual Aim is on)
+  let prevStart = false;
+
+  // Gamepad: polled once per fixed step from Main. Left stick moves, right
+  // stick aims, Start pauses/resumes (edge-triggered).
+  function update() {
+    padX = 0;
+    padY = 0;
+    padAim = null;
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    let p = null;
+    for (const g of pads)
+      if (g && g.connected) {
+        p = g;
+        break;
+      }
+    if (!p) {
+      prevStart = false;
+      return;
+    }
+    const dz = (v) => (Math.abs(v) > 0.18 ? v : 0);
+    padX = dz(p.axes[0] || 0);
+    padY = dz(p.axes[1] || 0);
+    const ax = dz(p.axes[2] || 0);
+    const ay = dz(p.axes[3] || 0);
+    if (ax || ay) {
+      const l = Math.hypot(ax, ay);
+      padAim = { x: ax / l, y: ay / l };
+    }
+    const start = !!(p.buttons[9] && p.buttons[9].pressed);
+    if (start && !prevStart) onPause?.();
+    prevStart = start;
+  }
 
   // True while the user is typing in a form control (e.g. the leaderboard-name
   // field) — movement/pause keys must reach the field, not the game, and must NOT be
@@ -83,6 +118,10 @@ export function makeInput({ canvas, isPlaying, onPause }) {
       x += KEYS[code][0];
       y += KEYS[code][1];
     }
+    if (!x && !y && (padX || padY)) {
+      x = padX;
+      y = padY;
+    }
     if (x || y) {
       const l = Math.hypot(x, y);
       return { x: x / l, y: y / l };
@@ -98,8 +137,10 @@ export function makeInput({ canvas, isPlaying, onPause }) {
     return { x: 0, y: 0 };
   }
 
-  // Manual aim: direction from player to the cursor (desktop hover) or held finger.
+  // Manual aim: right stick wins, else direction from player to the cursor
+  // (desktop hover) or held finger.
   function getAim(camera, player) {
+    if (padAim) return padAim;
     const src = hover || pointer;
     if (!src) return null;
     const dx = camera.toWorldX(src.x) - player.x;
@@ -112,6 +153,7 @@ export function makeInput({ canvas, isPlaying, onPause }) {
   return {
     getIntent,
     getAim,
+    update,
     clear: () => {
       pointer = null;
       hover = null;

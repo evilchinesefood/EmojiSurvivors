@@ -14,9 +14,27 @@ function vacuumToward(item, p, dt) {
   return d;
 }
 
+// Co-op: the nearest live unit (host or ally) attracts and collects. With no
+// allies this always returns the player — the solo path is byte-identical.
+function nearestUnit(state, x, y) {
+  const p = state.player;
+  let best = p;
+  let bd = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y);
+  for (const al of state.allies) {
+    if (al.downed) continue;
+    const d = (al.x - x) * (al.x - x) + (al.y - y) * (al.y - y);
+    if (d < bd) {
+      bd = d;
+      best = al;
+    }
+  }
+  return best;
+}
+
 export function stepPickups(state, dt) {
   const p = state.player;
   const m = state.modifiers;
+  const multi = !!(state.allies && state.allies.length);
   const xpMul = m ? m.xpMul : 1;
   const coinMul = m ? m.coinMul : 1;
   const magR = p.magnetR;
@@ -24,16 +42,17 @@ export function stepPickups(state, dt) {
   const magR2 = magR * magR;
   const pickR2 = pickR * pickR;
 
-  // gems → XP
+  // gems → XP (shared pool: whoever grabs it, the host levels)
   for (let i = state.gems.length - 1; i >= 0; i--) {
     const g = state.gems[i];
-    let dx = p.x - g.x;
-    let dy = p.y - g.y;
+    const u = multi ? nearestUnit(state, g.x, g.y) : p;
+    let dx = u.x - g.x;
+    let dy = u.y - g.y;
     if (g.vacuum || dx * dx + dy * dy < magR2) {
       g.vacuum = true;
-      vacuumToward(g, p, dt);
-      dx = p.x - g.x;
-      dy = p.y - g.y;
+      vacuumToward(g, u, dt);
+      dx = u.x - g.x;
+      dy = u.y - g.y;
     }
     if (dx * dx + dy * dy < pickR2) {
       p.xp += g.value * state.stats.growth * xpMul;
@@ -43,21 +62,24 @@ export function stepPickups(state, dt) {
     }
   }
 
-  // coins → bank (greed-scaled)
+  // coins → bank (greed-scaled; co-op allies bank their own pickups)
   for (let i = state.coins.length - 1; i >= 0; i--) {
     const c = state.coins[i];
-    const dx = p.x - c.x;
-    const dy = p.y - c.y;
+    const u = multi ? nearestUnit(state, c.x, c.y) : p;
+    const dx = u.x - c.x;
+    const dy = u.y - c.y;
     const d2 = dx * dx + dy * dy;
     if (c.vacuum || d2 < magR2) {
       c.vacuum = true;
-      vacuumToward(c, p, dt);
+      vacuumToward(c, u, dt);
     }
-    const nd2 = (p.x - c.x) * (p.x - c.x) + (p.y - c.y) * (p.y - c.y);
+    const nd2 = (u.x - c.x) * (u.x - c.x) + (u.y - c.y) * (u.y - c.y);
     if (nd2 < pickR2) {
-      p.coins += state.tainted
+      const v = state.tainted
         ? 1
         : Math.max(1, Math.round(c.value * state.stats.greed * coinMul));
+      if (u === p) p.coins += v;
+      else u.coins += v;
       emit(state, "coin", { value: c.value });
       swapPop(state.coins, i);
     }

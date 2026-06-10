@@ -22,6 +22,8 @@ import { LevelUpScreen } from "./UI/LevelUpScreen.js";
 import { ResultScreen } from "./UI/ResultScreen.js";
 import { ShopScreen } from "./UI/ShopScreen.js";
 import { SettingsScreen } from "./UI/SettingsScreen.js";
+import { CoopScreen, GuestPauseScreen } from "./UI/CoopScreen.js";
+import { makeCoop } from "./Net/Coop.js";
 import { levelUpChoices, applyChoice } from "./Systems/Leveling.js";
 import { makeSfx } from "./Audio/Sfx.js";
 import { makeMeta } from "./Meta/Meta.js";
@@ -68,6 +70,7 @@ const canvas = document.getElementById("Game");
 const ctx = canvas.getContext("2d");
 const hudRoot = document.getElementById("Hud");
 const overlay = document.getElementById("Overlay");
+const coopToastEl = document.getElementById("CoopToast");
 
 const camera = makeCamera();
 function resize() {
@@ -120,6 +123,8 @@ function reduceMotion() {
 }
 
 let state = null;
+let guestRun = null; // co-op guest mode: no local sim, render the host's ghost
+let lastGhostHp = Infinity;
 let selectedCharId = STARTER_ID;
 let lastSummary = { time: 0, kills: 0, level: 1, coins: 0 };
 let quack = false; // Konami easter egg — ducks until the next Play
@@ -135,6 +140,13 @@ const seasonal = {
 const renderer = makeRenderer(ctx);
 const particles = makeParticles();
 const fx = makeFx();
+const coop = makeCoop();
+let ctrlToastMsg = "";
+function refreshToast(downed) {
+  const msg = downed ? "💀 Down — respawning…" : ctrlToastMsg;
+  if (coopToastEl.textContent !== msg) coopToastEl.textContent = msg;
+  coopToastEl.hidden = !msg;
+}
 const hud = makeHud(hudRoot, {
   onPause,
   onSpeed: (n) => loop.setTimescale(n),
@@ -148,6 +160,16 @@ const input = makeInput({
     if (machine.is(S.PLAYING)) onPause();
     else if (machine.is(S.PAUSED)) resume();
   },
+});
+
+// Co-op host: tell guests when the sim freezes for a level-up / pause.
+machine.onChange((s, prev) => {
+  if (coop.isHost() && state) {
+    if (s === S.LEVELUP) coop.hostNotify({ t: "lu", open: 1 });
+    else if (prev === S.LEVELUP) coop.hostNotify({ t: "lu", open: 0 });
+    if (s === S.PAUSED) coop.hostNotify({ t: "pause", open: 1 });
+    else if (prev === S.PAUSED) coop.hostNotify({ t: "pause", open: 0 });
+  }
 });
 
 // Unlock/resume the AudioContext on the first user gesture (autoplay policy), then
@@ -346,7 +368,28 @@ function submitEntry(entry) {
   if (!meta.tainted) postRun(entry, meta.playerName);
 }
 
+function guestQuit() {
+  coop.guestLeave();
+  guestRun = null;
+  ctrlToastMsg = "";
+  refreshToast(false);
+  loop.setTimescale(1);
+  machine.set(S.MENU);
+}
+
 function quitToMenu() {
+  // Co-op host bailing mid-run ends the run for everyone.
+  if (coop.isHost()) {
+    if (state && !state.outcome)
+      coop.hostNotify({
+        t: "end",
+        victory: false,
+        time: Math.floor(state.time),
+        kills: state.player.kills,
+        level: state.player.level,
+      });
+    coop.shutdown();
+  }
   // Bank a quit-mid-run (coins / best-time / Endless score) — the only other banking
   // path is endRun(), which a quit never reaches. Guard against double-banking a
   // finished run (outcome already set → already banked by endRun).
@@ -397,6 +440,16 @@ function endRun() {
     })),
   };
   loop.setTimescale(1); // reset fast-forward when a run ends
+  if (coop.isHost()) {
+    coop.hostNotify({
+      t: "end",
+      victory: won,
+      time: Math.floor(lastSummary.time),
+      kills: lastSummary.kills,
+      level: lastSummary.level,
+    });
+    coop.shutdown();
+  }
   machine.set(won ? S.VICTORY : S.GAMEOVER);
 }
 
@@ -461,6 +514,7 @@ const screens = {
         quack = false;
         machine.set(S.SELECT);
       },
+      onCoop: () => machine.set(S.COOP),
       onShop: () => machine.set(S.SHOP),
       onRecords: () => machine.set(S.RECORDS),
       onSettings: () => machine.set(S.SETTINGS),
@@ -492,42 +546,28 @@ const screens = {
       onBack: () => machine.set(S.SELECT),
     }),
   [S.PAUSED]: () =>
-    PauseScreen({
-      state,
+    state
+      ? PauseScreen({
+          state,
+          meta,
+          onResume: resume,
+          onRestart: restart,
+          onQuit: quitToMenu,
+        })
+      : GuestPauseScreen({ onResume: resume, onLeave: guestQuit }),
+  [S.COOP]: () =>
+    CoopScreen({
+      coop,
       meta,
-      onResume: resume,
-      onRestart: restart,
-      onQuit: quitToMenu,
-    }),
-  [S.LEVELUP]: () =>
-    LevelUpScreen({
-      count: state.pendingLevelUps,
-      choices: levelUpHand(),
-      rerollsLeft: state.rerollsLeft,
-      banishesLeft: state.banishesLeft,
-      onPick: pickChoice,
-      onLock: (c) => {
-        state.autoFiller = c.kind; // lock this filler, then take it now
-        pickChoice(c);
-      },
-      onReroll: () => {
-        if (state.rerollsLeft > 0) {
-          state.rerollsLeft -= 1;
-          state.currentChoices = null; // reroll regenerates the whole hand
-          shell.render();
-        }
-      },
-      onBanish: (c) => {
-        if (state.banishesLeft > 0 && c.id) {
-          state.banishedCards.add(c.id);
-          state.banishesLeft -= 1;
-          // Drop only the banished card; keep the rest of the hand intact.
-          if (state.currentChoices)
-            state.currentChoices = state.currentChoices.filter((x) => x !== c);
-          shell.render();
-        }
+      runLength: coopRunLength,
+      refresh: () => shell.render(),
+      onBack: () => machine.set(S.MENU),
+      onStart: (len) => {
+        startRun(coop.myChar, len, {});
+        coop.hostAttach(state, len);
       },
     }),
+  [S.LEVELUP]: () => (state ? hostLevelUpScreen() : guestLevelUpScreen()),
   [S.VICTORY]: () =>
     ResultScreen({
       victory: true,
@@ -552,7 +592,131 @@ const screens = {
     }),
 };
 
+// Co-op guest: the host dealt this hand (ctrl {t:"choices"}); the pick goes back
+// as an index and the host applies it to our ally.
+function guestLevelUpScreen() {
+  const hand = (coop.guestHand() || []).map((c, i) => ({
+    kind: c.k,
+    id: c.id,
+    emoji: c.e,
+    label: c.n,
+    desc: c.d,
+    _i: i,
+  }));
+  const pick = (c) => {
+    coop.guestPick(c._i);
+    if (!coop.guestHand() && machine.is(S.LEVELUP)) machine.set(S.PLAYING);
+    else shell.render();
+  };
+  return LevelUpScreen({
+    count: 1,
+    choices: hand,
+    rerollsLeft: 0,
+    banishesLeft: 0,
+    onPick: pick,
+    onLock: pick,
+    onReroll: () => {},
+    onBanish: () => {},
+  });
+}
+
+function hostLevelUpScreen() {
+  return LevelUpScreen({
+    count: state.pendingLevelUps,
+    choices: levelUpHand(),
+    rerollsLeft: state.rerollsLeft,
+    banishesLeft: state.banishesLeft,
+    onPick: pickChoice,
+    onLock: (c) => {
+      state.autoFiller = c.kind; // lock this filler, then take it now
+      pickChoice(c);
+    },
+    onReroll: () => {
+      if (state.rerollsLeft > 0) {
+        state.rerollsLeft -= 1;
+        state.currentChoices = null; // reroll regenerates the whole hand
+        shell.render();
+      }
+    },
+    onBanish: (c) => {
+      if (state.banishesLeft > 0 && c.id) {
+        state.banishedCards.add(c.id);
+        state.banishesLeft -= 1;
+        // Drop only the banished card; keep the rest of the hand intact.
+        if (state.currentChoices)
+          state.currentChoices = state.currentChoices.filter((x) => x !== c);
+        shell.render();
+      }
+    },
+  });
+}
+
+const coopRunLength = { value: 600 };
 const shell = makeShell({ overlay, hud, machine, screens });
+
+// ── Co-op callbacks (need shell/machine/meta live).
+coop.onToast = (m) => {
+  ctrlToastMsg = m || "";
+  refreshToast(false);
+};
+coop.onLobby = () => {
+  if (machine.is(S.COOP)) shell.render();
+};
+// Guest upgrade hands: open our own LevelUp screen when one arrives, close it
+// when the pick is sent (or re-render if another hand is already queued).
+coop.onChoices = () => {
+  if (!guestRun) return;
+  if (coop.guestHand()) {
+    if (machine.is(S.PLAYING)) machine.set(S.LEVELUP);
+    else if (machine.is(S.LEVELUP)) shell.render();
+  } else if (machine.is(S.LEVELUP)) machine.set(S.PLAYING);
+};
+coop.onStart = (info) => {
+  meta.recordPlay({});
+  guestRun = { runLength: info.runLength };
+  lastGhostHp = Infinity;
+  hud.resetSpeed();
+  machine.set(S.PLAYING);
+};
+coop.onEnd = ({ victory, time, kills, level }) => {
+  if (!guestRun) return;
+  const coins = coop.myCoins();
+  meta.bankRun(guestRun.runLength, coins, time);
+  if (victory) meta.recordWin();
+  const wid = CHARACTERS[coop.myChar]?.weapon;
+  lastSummary = {
+    time,
+    kills,
+    level,
+    coins,
+    character: CHARACTERS[coop.myChar],
+    dps: 0,
+    endless: false,
+    score: 0,
+    bestScore: meta.bestScore,
+    tainted: false,
+    modifiers: [],
+    newUnlocks: [],
+    weapons: wid
+      ? [{ emoji: WEAPONS[wid]?.emoji, level: 1, evolved: false }]
+      : [],
+    passives: [],
+  };
+  guestRun = null;
+  coop.shutdown();
+  ctrlToastMsg = "";
+  refreshToast(false);
+  machine.set(victory ? S.VICTORY : S.GAMEOVER);
+};
+coop.onClose = (reason) => {
+  if (guestRun) {
+    guestRun = null;
+    ctrlToastMsg = "";
+    refreshToast(false);
+    machine.set(S.MENU);
+    announce(reason || "Disconnected");
+  } else if (machine.is(S.COOP)) shell.render();
+};
 
 // Konami code on any screen → the menu goes full duck until the next Play.
 const KONAMI =
@@ -572,13 +736,25 @@ addEventListener("keydown", (e) => {
 
 const loop = createLoop(
   (dt) => {
-    if (machine.is(S.PLAYING)) {
+    input.update(dt); // gamepad poll — every state, so Start can pause AND resume
+    if (machine.is(S.PLAYING) && guestRun) {
+      // Co-op guest: no local sim — predict own movement, stream input up.
+      const gp = coop.ghost()?.player;
+      const pseudo = gp ? { x: gp.x, y: gp.y } : { x: 0, y: 0 };
+      const intent = input.getIntent(camera, pseudo);
+      coop.guestPredict(dt, intent);
+      const aim = meta.settings.manualAim ? input.getAim(camera, pseudo) : null;
+      coop.guestInput(intent, aim || { x: 0, y: 0 }, true); // 2D keeps auto-fire
+      particles.update(dt);
+    } else if (machine.is(S.PLAYING) && state) {
       state.input.move = input.getIntent(camera, state.player);
       state.input.aim = meta.settings.manualAim
         ? input.getAim(camera, state.player)
         : null;
+      if (coop.isHost()) coop.hostTick(state); // guests' inputs -> allies
       stepSim(state, dt);
       handleEvents();
+      if (coop.isHost()) coop.hostFlush(state); // ~20Hz snapshot broadcast
       if (!pacifistShown && state.time >= 60 && state.player.kills === 0) {
         pacifistShown = true;
         particles.text(
@@ -617,6 +793,27 @@ const loop = createLoop(
       ctx.restore();
       fx.drawVignette(ctx, camera.w, camera.h);
       hud.update(state, trayItems());
+    } else if (guestRun) {
+      const ghost = coop.ghost();
+      if (ghost) {
+        if (machine.is(S.PLAYING) && overlay.firstChild) mount(overlay, null);
+        camera.follow(ghost.player.x, ghost.player.y);
+        // own-HP drop is the guest's hurt feedback (events stay host-side)
+        if (ghost.player.hp < lastGhostHp - 0.5) {
+          sfx.play("hurt");
+          if (!reduceMotion()) fx.hurt(meta.settings.shake);
+        }
+        lastGhostHp = ghost.player.hp;
+        refreshToast(!!ghost.downedSelf);
+        const sh = fx.offset();
+        renderer.render(ghost, camera, sh);
+        ctx.save();
+        ctx.translate(sh.x, sh.y);
+        particles.draw(ctx, camera);
+        ctx.restore();
+        fx.drawVignette(ctx, camera.w, camera.h);
+        hud.update(ghost, coop.guestTray());
+      }
     } else {
       // Menu backdrop: drift the camera at 45° (equal x/y) so the graveyard slides
       // by. Wall-clock based (rAF rate varies); the gap guard skips stale deltas

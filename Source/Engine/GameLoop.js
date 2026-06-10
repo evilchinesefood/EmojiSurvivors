@@ -6,7 +6,7 @@
 // probe can drive it under node. It only advances while the run is live — the loop
 // caller gates on the PLAYING state, and stepSim itself bails when a level-up is
 // pending or the run is over.
-import { movePlayer, stepEnemies } from "../Systems/Movement.js";
+import { movePlayer, stepEnemies, stepAllies } from "../Systems/Movement.js";
 import { stepSpawner } from "../Systems/Spawner.js";
 import { stepWeapons } from "../Systems/WeaponSystem.js";
 import { stepCombat } from "../Systems/CombatSystem.js";
@@ -27,6 +27,7 @@ export function stepSim(state, dt) {
   if (state.outcome || state.awaitingLevelUp) return;
   const p = state.player;
   movePlayer(state, dt); // enemy separation uses last step's hash (1-frame stale, fine)
+  stepAllies(state, dt); // co-op only — no-op with no allies
   stepEnemies(state, dt);
   stepSpawner(state, dt);
   rebuildHash(state); // refresh AFTER moves + spawns so combat queries are accurate

@@ -28,10 +28,32 @@ export function stepEnemies(state, dt) {
   const p = state.player;
   const enemies = state.enemies;
   const near = state.neighbors;
+  // Co-op: enemies hunt the nearest live player. targets stays null in solo
+  // runs, keeping the original player-seek math (and RNG streams) untouched.
+  let targets = null;
+  if (state.allies && state.allies.length) {
+    targets = [p];
+    for (const al of state.allies) if (!al.downed) targets.push(al);
+  }
   for (let i = 0; i < enemies.length; i++) {
     const e = enemies[i];
-    let ax = p.x - e.x;
-    let ay = p.y - e.y;
+    let tx = p.x;
+    let ty = p.y;
+    if (targets) {
+      let bd = Infinity;
+      for (const tgt of targets) {
+        const ddx = tgt.x - e.x;
+        const ddy = tgt.y - e.y;
+        const dd = ddx * ddx + ddy * ddy;
+        if (dd < bd) {
+          bd = dd;
+          tx = tgt.x;
+          ty = tgt.y;
+        }
+      }
+    }
+    let ax = tx - e.x;
+    let ay = ty - e.y;
     const d = Math.hypot(ax, ay) || 1;
     ax /= d;
     ay /= d;
@@ -109,5 +131,44 @@ export function stepEnemies(state, dt) {
     const sp = d > 56 ? Math.max(state.stats.speed * 1.02, (d - 48) * 1.4) : 0;
     c.x += (dx / d) * sp * dt;
     c.y += (dy / d) * sp * dt;
+  }
+}
+
+// Co-op allies: move by their own networked input at the host's speed stat;
+// downed allies count down and respawn beside the host at half HP. No-op when
+// allies is empty (every solo/headless run).
+export function stepAllies(state, dt) {
+  const allies = state.allies;
+  if (!allies || !allies.length) return;
+  const p = state.player;
+  for (const al of allies) {
+    if (al.downed) {
+      al.respawnT -= dt;
+      if (al.respawnT <= 0) {
+        al.downed = false;
+        al.hp = al.maxHp * 0.5;
+        al.invuln = 2;
+        al.x = p.x + 50;
+        al.y = p.y + 50;
+      }
+      continue;
+    }
+    const m = al.input.move;
+    const len = Math.hypot(m.x, m.y);
+    if (len > 0.001) {
+      const nx = m.x / len;
+      const ny = m.y / len;
+      const sp = state.stats.speed * Math.min(1, len);
+      al.vx = nx * sp;
+      al.vy = ny * sp;
+      al.facing.x = nx;
+      al.facing.y = ny;
+    } else {
+      al.vx = 0;
+      al.vy = 0;
+    }
+    al.x += al.vx * dt;
+    al.y += al.vy * dt;
+    if (al.invuln > 0) al.invuln -= dt;
   }
 }

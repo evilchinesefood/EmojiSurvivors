@@ -15,16 +15,15 @@ export function damageMul(state) {
   return m;
 }
 
-function nearest(state) {
-  const p = state.player;
+function nearest(state, sx = state.player.x, sy = state.player.y) {
   const en = state.enemies;
   let best = null;
   let bd = Infinity;
   for (let i = 0; i < en.length; i++) {
     const e = en[i];
     if (e.dead) continue;
-    const dx = e.x - p.x;
-    const dy = e.y - p.y;
+    const dx = e.x - sx;
+    const dy = e.y - sy;
     const d = dx * dx + dy * dy;
     if (d < bd) {
       bd = d;
@@ -97,7 +96,7 @@ function pushHazard(state, x, y, r, color, life) {
 }
 
 function lobTarget(state, p) {
-  const t = nearest(state);
+  const t = nearest(state, p.x, p.y);
   if (t)
     return {
       x: t.x + state.combatRng.float(-18, 18),
@@ -108,8 +107,9 @@ function lobTarget(state, p) {
   return { x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r };
 }
 
-function fire(state, w, def, sc, stats, dm) {
-  const p = state.player;
+// shooter/aimIn default to the host player; co-op allies pass themselves.
+function fire(state, w, def, sc, stats, dm, shooter, aimIn) {
+  const p = shooter || state.player;
   const dmg = sc.damage * dm;
   // projCount (Bracer) adds extra projectiles/sweeps/lobs to every count-based
   // behavior; the persistent zone weapons (orbit/aura) scale by level only.
@@ -121,14 +121,14 @@ function fire(state, w, def, sc, stats, dm) {
 
   switch (def.behavior) {
     case "aimed": {
-      const aim = state.input.aim; // manual aim overrides auto-target
+      const aim = aimIn; // manual aim overrides auto-target
       let dx = p.facing.x;
       let dy = p.facing.y;
       if (aim) {
         dx = aim.x;
         dy = aim.y;
       } else {
-        const t = nearest(state);
+        const t = nearest(state, p.x, p.y);
         if (t) {
           dx = t.x - p.x;
           dy = t.y - p.y;
@@ -159,7 +159,7 @@ function fire(state, w, def, sc, stats, dm) {
       break;
     }
     case "spread": {
-      const aim = state.input.aim;
+      const aim = aimIn;
       const a0 = aim
         ? Math.atan2(aim.y, aim.x)
         : Math.atan2(p.facing.y, p.facing.x);
@@ -271,7 +271,7 @@ function fire(state, w, def, sc, stats, dm) {
   }
 }
 
-function ensureOrbits(state, w, def, sc, stats, dm) {
+function ensureOrbits(state, w, def, sc, stats, dm, owner = state.player) {
   // Echo Stone (duration) adds orbs — the orbit weapon's "more" payoff.
   const desired = sc.count + Math.floor((stats.duration - 1) * 4);
   const radius = def.radius * stats.area * sc.area;
@@ -284,6 +284,7 @@ function ensureOrbits(state, w, def, sc, stats, dm) {
     for (let i = 0; i < desired; i++) {
       state.orbits.push({
         w,
+        owner,
         offset: (i / desired) * Math.PI * 2,
         emoji: def.emoji,
         size: def.size || 22,
@@ -292,8 +293,8 @@ function ensureOrbits(state, w, def, sc, stats, dm) {
         dmg: sc.damage * dm,
         weaponId: def.id,
         hitCd: def.hitCd || 0.35,
-        x: state.player.x,
-        y: state.player.y,
+        x: owner.x,
+        y: owner.y,
       });
     }
   } else {
@@ -308,11 +309,11 @@ function ensureOrbits(state, w, def, sc, stats, dm) {
 }
 
 function updateOrbits(state) {
-  const p = state.player;
   for (const o of state.orbits) {
+    const c = o.owner || state.player;
     const ang = (o.w.orbAngle || 0) + o.offset;
-    o.x = p.x + Math.cos(ang) * o.radius;
-    o.y = p.y + Math.sin(ang) * o.radius;
+    o.x = c.x + Math.cos(ang) * o.radius;
+    o.y = c.y + Math.sin(ang) * o.radius;
   }
 }
 
@@ -340,15 +341,49 @@ export function stepWeapons(state, dt) {
     const interval = Math.max(0.05, sc.interval / stats.cooldown);
     w.cd -= dt;
     if (w.cd > 0) continue;
+    // Trigger weapons hold ready until the player fires. The passive aura pulse
+    // is exempt (it's a zone, not an attack). input.fire defaults true, so
+    // headless sims and pre-FPS saves keep auto-firing.
+    if (def.behavior !== "aura" && state.input.fire === false) {
+      w.cd = 0;
+      continue;
+    }
     w.cd += interval;
-    fire(state, w, def, sc, stats, dm);
+    fire(state, w, def, sc, stats, dm, state.player, state.input.aim);
     if (state.gimmick === "arcaneEcho" && state.combatRng.chance(0.15)) {
-      fire(state, w, def, sc, stats, dm);
+      fire(state, w, def, sc, stats, dm, state.player, state.input.aim);
       emit(state, "echo");
     }
     if (state.gimmick === "bloodPact" && state.combatRng.chance(0.1)) {
       const p = state.player;
       p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.01);
+    }
+  }
+
+  // Co-op allies: their own picked loadout (see Leveling.allyLevelChoices),
+  // trigger-gated like the player's. Damage uses the host's stat fold.
+  const allies = state.allies;
+  if (allies && allies.length) {
+    for (const al of allies) {
+      if (al.downed) continue;
+      for (const w of al.weapons) {
+        const def = WEAPONS[w.id];
+        if (!def) continue;
+        const sc = scaleWeapon(def, w.level);
+        if (def.behavior === "orbit") {
+          ensureOrbits(state, w, def, sc, stats, dm, al);
+          continue;
+        }
+        const interval = Math.max(0.05, sc.interval / stats.cooldown);
+        w.cd -= dt;
+        if (w.cd > 0) continue;
+        if (def.behavior !== "aura" && al.input.fire === false) {
+          w.cd = 0;
+          continue;
+        }
+        w.cd += interval;
+        fire(state, w, def, sc, stats, dm, al, al.input.aim);
+      }
     }
   }
   updateOrbits(state);

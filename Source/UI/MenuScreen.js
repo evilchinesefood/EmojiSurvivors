@@ -17,6 +17,13 @@ export function MenuScreen(ctx) {
     "Play",
   );
   play.addEventListener("click", () => ctx.onPlay());
+  const coop = h(
+    "wa-button",
+    { size: "l", appearance: "outlined" },
+    h("span", { slot: "start" }, "🤝"),
+    "Co-op",
+  );
+  coop.addEventListener("click", () => ctx.onCoop());
   const shop = h(
     "wa-button",
     { size: "l", appearance: "outlined" },
@@ -63,6 +70,6 @@ export function MenuScreen(ctx) {
     wallet,
     h("div", { class: "title title-xl" }, em, " EmojiSurvivors"),
     h("div", { class: "subtitle" }, subtitle),
-    h("div", { class: "menu-actions" }, play, shop, records, settings),
+    h("div", { class: "menu-actions" }, play, coop, shop, records, settings),
   );
 }

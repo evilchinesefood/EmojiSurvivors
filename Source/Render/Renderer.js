@@ -329,6 +329,19 @@ export function makeRenderer(ctx) {
     if (state.cat && cam.inView(state.cat.x, state.cat.y, 24))
       emoji("🐈‍⬛", cam.toScreenX(state.cat.x), cam.toScreenY(state.cat.y), 20);
 
+    // Co-op teammates (host's live allies, or a guest ghost's other players).
+    if (state.allies) {
+      for (const al of state.allies) {
+        if (!cam.inView(al.x, al.y, 30)) continue;
+        emoji(
+          al.downed ? "💀" : al.emoji || "🙂",
+          cam.toScreenX(al.x),
+          cam.toScreenY(al.y),
+          28,
+        );
+      }
+    }
+
     // Player (centered). Blink during i-frames. Clown Mode replaces the sprite.
     const pl = state.player;
     const blink = pl.invuln > 0 && Math.floor(state.time * 16) % 2 === 0;

@@ -400,3 +400,55 @@ wa-button i.fa-duotone {
     scroll-behavior: auto !important;
   }
 }
+
+/* Co-op chrome (lobby + in-run toast). */
+.coop-toast {
+  position: fixed;
+  left: 50%;
+  top: 12vh;
+  transform: translateX(-50%);
+  z-index: 15;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  background: rgba(20, 14, 30, 0.8);
+  border: 1px solid var(--line);
+  color: var(--bone);
+  font-size: 0.95rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.coop-char {
+  width: 52px;
+  height: 52px;
+  font-size: 1.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  cursor: pointer;
+}
+.coop-char.sel {
+  border-color: var(--arcane);
+  box-shadow: 0 0 10px rgba(155, 108, 255, 0.5);
+}
+.coop-code {
+  width: 7rem;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+}
+.coop-roomcode {
+  text-align: center;
+}
+.coop-code-big {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 7vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  color: var(--gold, #e8c14a);
+  text-shadow: 0 0 14px rgba(232, 193, 74, 0.4);
+}
+.coop-err {
+  color: var(--bad, #c0354a);
+  font-size: 0.9rem;
+}

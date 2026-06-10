@@ -21,5 +21,9 @@ import "./Modifiers.Test.js";
 import "./Tamper.Test.js";
 import "./Records.Test.js";
 import "./Expansion.Test.js";
+import "./FireGate.Test.js";
+import "./Allies.Test.js";
+import "./Protocol.Test.js";
+import "./Screens.Test.js";
 
 run(process.argv[2]);

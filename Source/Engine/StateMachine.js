@@ -11,6 +11,7 @@ export const S = {
   SHOP: "SHOP",
   SETTINGS: "SETTINGS",
   RECORDS: "RECORDS",
+  COOP: "COOP",
 };
 
 export function makeMachine(initial = S.BOOT) {

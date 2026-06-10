@@ -303,6 +303,41 @@ export function stepCombat(state, dt) {
     }
   }
 
+  // 4b) enemy → co-op ally contact: same crowd rule, but no revives — allies go
+  // down and respawn instead of ending the run. Skipped entirely in solo runs.
+  const allies = state.allies;
+  if (allies && allies.length) {
+    for (const al of allies) {
+      if (al.downed || al.invuln > 0) continue;
+      state.hash.queryCircle(al.x, al.y, 44, near);
+      let worst = null;
+      let crowd = 0;
+      for (let j = 0; j < near.length; j++) {
+        const e = near[j];
+        if (e.dead || e.dmg <= 0) continue;
+        const dx = e.x - al.x;
+        const dy = e.y - al.y;
+        const reach = 16 + e.size * 0.5;
+        if (dx * dx + dy * dy <= reach * reach) {
+          crowd++;
+          if (!worst || e.dmg > worst.dmg) worst = e;
+        }
+      }
+      if (worst) {
+        const crowdMul = Math.min(1 + (crowd - 1) * 0.6, 5);
+        al.hp -= Math.max(1, worst.dmg * crowdMul - state.stats.armor);
+        al.invuln = IFRAME;
+        emit(state, "allyhurt", { id: al.id, x: al.x, y: al.y });
+        if (al.hp <= 0) {
+          al.hp = 0;
+          al.downed = true;
+          al.respawnT = 15;
+          emit(state, "allydown", { id: al.id, x: al.x, y: al.y });
+        }
+      }
+    }
+  }
+
   // 5) death sweep — loot, kills, victory-on-boss
   const en = state.enemies;
   for (let i = en.length - 1; i >= 0; i--) {

@@ -77,6 +77,7 @@ export function createRunState({
       gem: makePool(() => ({})),
     },
     neighbors: [], // scratch array reused by hash queries
+    allies: [], // co-op remote players (empty in every solo/headless run)
     enemies: [],
     projectiles: [],
     gems: [],
@@ -86,7 +87,9 @@ export function createRunState({
     hazards: [], // one-shot burst visuals (explosion/whip), short-lived, render only
     auraViz: [], // steady player-centered aura glows (continuous weapons), render only
     strikes: [], // one-shot AoE damage events emitted by weapons, consumed by combat
-    input: { move: { x: 0, y: 0 }, aim: null },
+    // fire defaults TRUE: headless (tests/probes) auto-fires; the FPS view layer
+    // overwrites it each frame from the trigger (mouse / touch button / gamepad).
+    input: { move: { x: 0, y: 0 }, aim: null, fire: true },
     events: [],
     modifiers: mods,
     modifierSel: modifiers, // raw selection, for restart + result display
@@ -121,4 +124,42 @@ export function createRunState({
 
 export function emit(state, type, data) {
   state.events.push(data ? { type, ...data } : { type });
+}
+
+// Co-op: remote players ride the host sim as lightweight allies — they move by
+// their own networked input, fire their character's starter weapon (auto-leveled
+// with the host), take contact damage, and get downed/respawn instead of ending
+// the run. Every system gates on allies.length, so solo runs are untouched.
+export function addAlly(state, { id, name, character }) {
+  const a = {
+    id,
+    name: name || "Ally",
+    character: character.id,
+    emoji: character.emoji,
+    x: state.player.x + 40 + state.allies.length * 34,
+    y: state.player.y + 40,
+    vx: 0,
+    vy: 0,
+    facing: { x: 0, y: 1 },
+    hp: state.stats.maxHp,
+    maxHp: state.stats.maxHp,
+    invuln: 1,
+    weapons: [{ id: character.weapon, level: 1, cd: 0, alt: 0 }],
+    input: { move: { x: 0, y: 0 }, aim: null, fire: false },
+    downed: false,
+    respawnT: 0,
+    coins: 0,
+  };
+  state.allies.push(a);
+  return a;
+}
+
+export function removeAlly(state, id) {
+  const i = state.allies.findIndex((a) => a.id === id);
+  if (i < 0) return;
+  const al = state.allies[i];
+  // drop any orbit bodies the ally owned — nothing steps them once it's gone
+  for (let k = state.orbits.length - 1; k >= 0; k--)
+    if (state.orbits[k].owner === al) state.orbits.splice(k, 1);
+  state.allies.splice(i, 1);
 }

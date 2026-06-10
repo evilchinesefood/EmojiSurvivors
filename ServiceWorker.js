@@ -1,4 +1,8 @@
-const CACHE = "emojisurvivors-v18";
+// Caches are origin-scoped and SHARED with the 3D game's SW — only ever delete
+// our own caches (NOT emojisurvivors3d-*), or the two games wipe each other.
+const CACHE = "emojisurvivors-v19";
+const isOurs = (k) =>
+  k.startsWith("emojisurvivors-") && !k.startsWith("emojisurvivors3d-");
 const SHELL_FIRST_PARTY = [
   "./",
   "./Index.html",
@@ -40,6 +44,11 @@ const SHELL_FIRST_PARTY = [
   "./Source/Input/Input.js",
   // Audio
   "./Source/Audio/Sfx.js",
+  // Net (co-op)
+  "./Source/Net/Signal.js",
+  "./Source/Net/Rtc.js",
+  "./Source/Net/Protocol.js",
+  "./Source/Net/Coop.js",
   // Meta
   "./Source/Meta/Save.js",
   "./Source/Meta/Meta.js",
@@ -59,6 +68,7 @@ const SHELL_FIRST_PARTY = [
   "./Source/UI/ShopScreen.js",
   "./Source/UI/SettingsScreen.js",
   "./Source/UI/RecordsScreen.js",
+  "./Source/UI/CoopScreen.js",
   // Styles
   "./Source/Styles/Theme.css",
   "./Source/Styles/Reset.css",
@@ -121,7 +131,9 @@ self.addEventListener("activate", (e) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)),
+          keys
+            .filter((k) => isOurs(k) && k !== CACHE)
+            .map((k) => caches.delete(k)),
         ),
       )
       .then(() => self.clients.claim()),

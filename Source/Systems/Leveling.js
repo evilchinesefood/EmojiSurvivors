@@ -180,6 +180,72 @@ export function levelUpChoices(state) {
   return chosen;
 }
 
+// ── Co-op allies pick their own upgrades. Their hand is weapons-only (passives
+// fold into the shared host stat block, so they stay host-side) + fillers.
+// Uses rollRng, which solo runs never reach here — streams stay deterministic.
+export const ALLY_WEAPON_SLOTS = 3;
+
+export function allyLevelChoices(state, ally) {
+  const cand = [];
+  for (const w of ally.weapons) {
+    const def = WEAPONS[w.id];
+    if (def && w.level < MAX_WEAPON_LEVEL)
+      cand.push({
+        kind: "weapon-up",
+        id: w.id,
+        emoji: def.emoji,
+        label: def.name + " ⮕ L" + (w.level + 1),
+        desc: "Upgrade weapon",
+        weight: 10 + w.level * 8,
+      });
+  }
+  if (ally.weapons.length < ALLY_WEAPON_SLOTS) {
+    for (const id of BASE_WEAPON_IDS) {
+      if (!ally.weapons.some((w) => w.id === id)) {
+        const def = WEAPONS[id];
+        cand.push({
+          kind: "weapon-new",
+          id,
+          emoji: def.emoji,
+          label: def.name,
+          desc: "New weapon",
+          weight: 12,
+        });
+      }
+    }
+  }
+  const chosen = [];
+  while (chosen.length < 3 && cand.length)
+    chosen.push(weightedTake(state.rollRng, cand));
+  for (let fi = 0; fi < FILLERS.length && chosen.length < 3; fi++)
+    chosen.push(FILLERS[fi]);
+  return chosen;
+}
+
+export function applyAllyChoice(state, ally, c) {
+  switch (c.kind) {
+    case "weapon-new":
+      if (
+        ally.weapons.length < ALLY_WEAPON_SLOTS &&
+        WEAPONS[c.id] &&
+        !ally.weapons.some((w) => w.id === c.id)
+      )
+        ally.weapons.push({ id: c.id, level: 1, cd: 0, alt: 0, orbAngle: 0 });
+      break;
+    case "weapon-up": {
+      const w = ally.weapons.find((x) => x.id === c.id);
+      if (w && w.level < MAX_WEAPON_LEVEL) w.level += 1;
+      break;
+    }
+    case "heal":
+      ally.hp = Math.min(ally.maxHp, ally.hp + ally.maxHp * 0.4);
+      break;
+    case "coins":
+      ally.coins += 20;
+      break;
+  }
+}
+
 export function applyChoice(state, c) {
   const p = state.player;
   switch (c.kind) {
