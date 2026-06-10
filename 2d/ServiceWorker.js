@@ -1,6 +1,6 @@
 // Caches are origin-scoped and SHARED with the 3D game's SW — only ever delete
 // our own caches (NOT emojisurvivors3d-*), or the two games wipe each other.
-const CACHE = "emojisurvivors-v21";
+const CACHE = "emojisurvivors-v22";
 const isOurs = (k) =>
   k.startsWith("emojisurvivors-") && !k.startsWith("emojisurvivors3d-");
 const SHELL_FIRST_PARTY = [

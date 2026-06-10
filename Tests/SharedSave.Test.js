@@ -92,6 +92,32 @@ describe("Shared 2D/3D save", () => {
     expect(again.tainted).toBe(false);
   });
 
+  it("a surviving legacy blob never double-folds (delete no-op safe)", () => {
+    // Storage whose removeItem silently fails, so the legacy key persists across
+    // loads — the merged flag, not the delete, must guarantee single-fold.
+    const base = memStorage();
+    const st = {
+      getItem: base.getItem,
+      setItem: base.setItem,
+      has: base.has,
+      // removeItem intentionally omitted → storage.removeItem?.(...) no-ops
+    };
+    put(st, SAVE_KEY, SIG_KEY, { ...migrate({}), coins: 80, plays: 3 });
+    put(st, "emojisurvivors3d-save", "emojisurvivors3d-save-sig", {
+      ...migrate({}),
+      coins: 20,
+      plays: 1,
+    });
+    const first = loadFrom(st);
+    expect(first.coins).toBe(100);
+    expect(first.plays).toBe(4);
+    expect(st.has("emojisurvivors3d-save")).toBe(true); // delete didn't take
+    // Re-loading must NOT add the legacy coins/plays a second time.
+    const second = loadFrom(st);
+    expect(second.coins).toBe(100);
+    expect(second.plays).toBe(4);
+  });
+
   it("legacy save with a bad signature taints the merged result", () => {
     const st = memStorage();
     put(st, SAVE_KEY, SIG_KEY, { ...migrate({}), coins: 10 });

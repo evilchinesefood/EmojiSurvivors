@@ -14,8 +14,13 @@
 </IfModule>
 
 <IfModule mod_headers.c>
+  <FilesMatch "ServiceWorker\.js$">
+    Header set Cache-Control "no-cache, max-age=0"
+  </FilesMatch>
   Header set X-Content-Type-Options nosniff
   Header set Referrer-Policy no-referrer
+  # Picker is static but has an inline <style> + <script>, so it needs 'unsafe-inline'.
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
 </IfModule>
 
 # Deny direct access to dotfiles — but never /.well-known/.

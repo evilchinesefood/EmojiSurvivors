@@ -87,6 +87,21 @@ export function SettingsScreen(ctx) {
   );
   back.addEventListener("click", () => ctx.onBack());
 
+  const credit = h(
+    "a",
+    {
+      class: "credit",
+      href: "https://jdayers.com",
+      target: "_blank",
+      rel: "noopener",
+      style: "margin-top:1.5rem",
+    },
+    "> made with ",
+    h("span", { class: "heart" }, "❤"),
+    " by david ayers",
+    h("span", { class: "cursor" }, "_"),
+  );
+
   return h(
     "div",
     { class: "screen" },
@@ -106,5 +121,6 @@ export function SettingsScreen(ctx) {
       versionRows,
     ),
     back,
+    credit,
   );
 }

@@ -591,6 +591,8 @@ export function makeRenderer3D(canvas) {
     new THREE.PointLight(0xffb45e, 1400, 300, 2),
   ];
   for (const l of lampLights) scene.add(l);
+  // Reused per-frame scratch for the nearest-N lantern selection (no alloc/sort).
+  const lampPick = lampLights.map(() => ({ d: Infinity, i: -1 }));
   let lanternSpots = []; // world positions of placed lantern cages
 
   // Rotate a local (lx, lz) offset by an instance's yaw.
@@ -1346,19 +1348,33 @@ export function makeRenderer3D(canvas) {
 
     // Lantern flames: flicker the cages' glow + park the real lights on the
     // nearest lanterns (≤44 spots — a tiny sort per frame).
-    const order = lanternSpots
-      .map((L, i) => ({
-        d: (L.x - px) * (L.x - px) + (L.z - py) * (L.z - py),
-        i,
-      }))
-      .sort((a, b) => a.d - b.d);
+    // Nearest-N lanterns by squared distance — partial selection sort into the
+    // reused lampPick scratch (≤44 spots), replacing a per-frame map()+sort().
+    const K = lampPick.length;
+    for (let k = 0; k < K; k++) {
+      lampPick[k].d = Infinity;
+      lampPick[k].i = -1;
+    }
+    for (let i = 0; i < lanternSpots.length; i++) {
+      const L = lanternSpots[i];
+      const d = (L.x - px) * (L.x - px) + (L.z - py) * (L.z - py);
+      if (d >= lampPick[K - 1].d) continue;
+      let j = K - 1;
+      while (j > 0 && lampPick[j - 1].d > d) {
+        lampPick[j].d = lampPick[j - 1].d;
+        lampPick[j].i = lampPick[j - 1].i;
+        j--;
+      }
+      lampPick[j].d = d;
+      lampPick[j].i = i;
+    }
     for (let k = 0; k < lampLights.length; k++) {
       const light = lampLights[k];
-      if (k >= order.length) {
+      const idx = lampPick[k].i;
+      if (idx < 0) {
         light.intensity = 0;
         continue;
       }
-      const idx = order[k].i;
       const L = lanternSpots[idx];
       light.position.set(L.x, L.y, L.z);
       light.intensity =

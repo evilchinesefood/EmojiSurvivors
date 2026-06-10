@@ -23,7 +23,7 @@
   </FilesMatch>
   Header set X-Content-Type-Options nosniff
   Header set Referrer-Policy no-referrer
-  Header set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self' stun:stun.l.google.com:19302 stun:stun1.l.google.com:19302; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
 </IfModule>
 
 # Deny direct access to dotfiles (.htaccess, .npmrc, .git, etc.) — but never

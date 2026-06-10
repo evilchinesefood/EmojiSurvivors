@@ -167,97 +167,103 @@ export function packSnapshot(state, tables, playersMeta) {
 }
 
 export function unpackSnapshot(buf, tables) {
-  const dv = new DataView(buf);
-  if (dv.getUint8(0) !== 1) return null;
-  const eT = (i) => tables.e.list[i] ?? "❔";
-  const cT = (i) => tables.c.list[i] ?? "rgba(155,108,255,";
-  const s = {
-    time: dv.getFloat32(1, true),
-    hostX: dv.getFloat32(5, true),
-    hostY: dv.getFloat32(9, true),
-    level: dv.getUint8(13),
-    xp: dv.getFloat32(14, true),
-    xpNext: dv.getFloat32(18, true),
-    kills: dv.getUint32(22, true),
-    bossHp: dv.getFloat32(26, true),
-    bossMax: dv.getFloat32(30, true),
-    players: [],
-    enemies: [],
-    projectiles: [],
-    pickups: [],
-    orbits: [],
-    hazards: [],
-    auras: [],
-  };
-  const pc = dv.getUint8(34);
-  let o = 35;
-  for (let i = 0; i < pc; i++) {
-    s.players.push({
-      slot: dv.getUint8(o),
-      emoji: eT(dv.getUint8(o + 1)),
-      downed: !!(dv.getUint8(o + 2) & 1),
-      x: dv.getFloat32(o + 4, true),
-      y: dv.getFloat32(o + 8, true),
-      hp: dv.getUint16(o + 12, true),
-      maxHp: dv.getUint16(o + 14, true),
-      coins: dv.getUint16(o + 16, true),
-    });
-    o += 18;
-  }
-  const hx = s.hostX;
-  const hy = s.hostY;
-  const nE = dv.getUint16(o, true);
-  o += 2;
-  for (let i = 0; i < nE; i++) {
-    const sb = dv.getUint8(o + 7);
-    s.enemies.push({
-      uid: dv.getUint16(o, true),
-      x: hx + dv.getInt16(o + 2, true),
-      y: hy + dv.getInt16(o + 4, true),
-      emoji: eT(dv.getUint8(o + 6)),
-      size: sb & 0x7f,
-      boss: !!(sb & 0x80),
-    });
-    o += 8;
-  }
-  const six = (out, n) => {
-    for (let i = 0; i < n; i++) {
-      out.push({
+  try {
+    const dv = new DataView(buf);
+    if (dv.getUint8(0) !== 1) return null;
+    const eT = (i) => tables.e.list[i] ?? "❔";
+    const cT = (i) => tables.c.list[i] ?? "rgba(155,108,255,";
+    const s = {
+      time: dv.getFloat32(1, true),
+      hostX: dv.getFloat32(5, true),
+      hostY: dv.getFloat32(9, true),
+      level: dv.getUint8(13),
+      xp: dv.getFloat32(14, true),
+      xpNext: dv.getFloat32(18, true),
+      kills: dv.getUint32(22, true),
+      bossHp: dv.getFloat32(26, true),
+      bossMax: dv.getFloat32(30, true),
+      players: [],
+      enemies: [],
+      projectiles: [],
+      pickups: [],
+      orbits: [],
+      hazards: [],
+      auras: [],
+    };
+    const pc = dv.getUint8(34);
+    let o = 35;
+    for (let i = 0; i < pc; i++) {
+      s.players.push({
+        slot: dv.getUint8(o),
+        emoji: eT(dv.getUint8(o + 1)),
+        downed: !!(dv.getUint8(o + 2) & 1),
+        x: dv.getFloat32(o + 4, true),
+        y: dv.getFloat32(o + 8, true),
+        hp: dv.getUint16(o + 12, true),
+        maxHp: dv.getUint16(o + 14, true),
+        coins: dv.getUint16(o + 16, true),
+      });
+      o += 18;
+    }
+    const hx = s.hostX;
+    const hy = s.hostY;
+    const nE = dv.getUint16(o, true);
+    o += 2;
+    for (let i = 0; i < nE; i++) {
+      const sb = dv.getUint8(o + 7);
+      s.enemies.push({
+        uid: dv.getUint16(o, true),
+        x: hx + dv.getInt16(o + 2, true),
+        y: hy + dv.getInt16(o + 4, true),
+        emoji: eT(dv.getUint8(o + 6)),
+        size: sb & 0x7f,
+        boss: !!(sb & 0x80),
+      });
+      o += 8;
+    }
+    const six = (out, n) => {
+      for (let i = 0; i < n; i++) {
+        out.push({
+          x: hx + dv.getInt16(o, true),
+          y: hy + dv.getInt16(o + 2, true),
+          emoji: eT(dv.getUint8(o + 4)),
+          size: dv.getUint8(o + 5),
+        });
+        o += 6;
+      }
+    };
+    const nP = dv.getUint8(o);
+    o += 1;
+    six(s.projectiles, nP);
+    const nK = dv.getUint16(o, true);
+    o += 2;
+    six(s.pickups, nK);
+    const nO = dv.getUint8(o);
+    o += 1;
+    six(s.orbits, nO);
+    const nH = dv.getUint8(o);
+    o += 1;
+    for (let i = 0; i < nH; i++) {
+      s.hazards.push({
         x: hx + dv.getInt16(o, true),
         y: hy + dv.getInt16(o + 2, true),
-        emoji: eT(dv.getUint8(o + 4)),
-        size: dv.getUint8(o + 5),
+        r: dv.getUint16(o + 4, true),
+        color: cT(dv.getUint8(o + 6)),
+        life: dv.getUint8(o + 7) / 255,
+        maxLife: 1,
       });
-      o += 6;
+      o += 8;
     }
-  };
-  const nP = dv.getUint8(o);
-  o += 1;
-  six(s.projectiles, nP);
-  const nK = dv.getUint16(o, true);
-  o += 2;
-  six(s.pickups, nK);
-  const nO = dv.getUint8(o);
-  o += 1;
-  six(s.orbits, nO);
-  const nH = dv.getUint8(o);
-  o += 1;
-  for (let i = 0; i < nH; i++) {
-    s.hazards.push({
-      x: hx + dv.getInt16(o, true),
-      y: hy + dv.getInt16(o + 2, true),
-      r: dv.getUint16(o + 4, true),
-      color: cT(dv.getUint8(o + 6)),
-      life: dv.getUint8(o + 7) / 255,
-      maxLife: 1,
-    });
-    o += 8;
+    const nA = dv.getUint8(o);
+    o += 1;
+    for (let i = 0; i < nA; i++) {
+      s.auras.push({ r: dv.getUint16(o, true), color: cT(dv.getUint8(o + 2)) });
+      o += 3;
+    }
+    return s;
+  } catch {
+    // A truncated or garbage snapshot (declared counts overrunning the buffer)
+    // makes DataView throw — degrade to null instead of killing the snap handler.
+    return null;
   }
-  const nA = dv.getUint8(o);
-  o += 1;
-  for (let i = 0; i < nA; i++) {
-    s.auras.push({ r: dv.getUint16(o, true), color: cT(dv.getUint8(o + 2)) });
-    o += 3;
-  }
-  return s;
 }

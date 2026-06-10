@@ -452,3 +452,72 @@ wa-button i.fa-duotone {
   color: var(--bad, #c0354a);
   font-size: 0.9rem;
 }
+
+/* "Made with love" CRT bezel badge — self-contained green-phosphor credit chip
+   (settings footer). VT323 isn't vendored, so it falls back to monospace. */
+.credit {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #0e3d1a 0%, #062a10 50%, #021608 100%);
+  border: 1px solid #2d8c4a;
+  box-shadow:
+    inset 0 1px 0 rgba(140, 255, 170, 0.6),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.6),
+    0 4px 14px rgba(0, 0, 0, 0.5),
+    0 0 18px rgba(92, 255, 138, 0.2);
+  font-family: "VT323", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 16px;
+  line-height: 1;
+  color: #5cff8a;
+  text-shadow:
+    0 0 6px #5cff8a,
+    0 0 14px rgba(92, 255, 138, 0.55);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-decoration: none;
+  user-select: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.credit:hover,
+.credit:focus-visible {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(140, 255, 170, 0.7),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.6),
+    0 6px 18px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(92, 255, 138, 0.35);
+}
+.credit:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(140, 255, 170, 0.3),
+    0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.credit .heart {
+  color: #ff5c5c;
+  text-shadow:
+    0 0 6px #ff5c5c,
+    0 0 14px rgba(255, 92, 92, 0.6);
+}
+.credit .cursor {
+  display: inline-block;
+  width: 0.55ch;
+  margin-left: 4px;
+  background: #5cff8a;
+  color: transparent;
+  animation: credit-blink 1s steps(1) infinite;
+}
+@keyframes credit-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .credit .cursor {
+    animation: none;
+  }
+}

@@ -22,9 +22,6 @@ CLAUDE.md
 docs/
 fixes.md
 
-# Online backends — deployed via rsync. Leaderboard.php holds the server-side
-# signing salt and the JSON stores are live server state: keep those off the
-# public repo. Api/Signal.php + Api/.htaccess carry no secrets and ARE tracked.
-Api/Leaderboard.php
-Api/LeaderboardData.json
-Api/SignalData.json
+# Online backends — deployed via rsync, never published. The whole Api/ folder
+# (PHP endpoints, .htaccess, and the live JSON stores) is kept off the repo.
+Api/

@@ -1,7 +1,7 @@
 // Caches are origin-scoped and SHARED with the 2D game's SW — only ever delete
 // caches under OUR prefix, or the two games wipe each other on every update.
 const CACHE_PREFIX = "emojisurvivors3d-";
-const CACHE = CACHE_PREFIX + "v10";
+const CACHE = CACHE_PREFIX + "v11";
 const SHELL_FIRST_PARTY = [
   "./",
   "./Index.html",

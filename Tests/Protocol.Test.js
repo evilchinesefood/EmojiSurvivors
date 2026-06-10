@@ -70,6 +70,19 @@ describe("Co-op protocol", () => {
     expect(g.auras[0].r).toBe(120);
   });
 
+  it("a truncated/garbage snapshot returns null instead of throwing", () => {
+    const guest = makeTables();
+    // Valid magic byte (1) but the declared counts run off a too-short buffer.
+    const bad = new DataView(new ArrayBuffer(40));
+    bad.setUint8(0, 1);
+    bad.setUint8(34, 200); // 200 players in a 40-byte buffer → overruns
+    expect(unpackSnapshot(bad.buffer, guest)).toBe(null);
+    // Pure garbage (wrong magic) also degrades, never throws.
+    const junk = new DataView(new ArrayBuffer(8));
+    junk.setUint8(0, 99);
+    expect(unpackSnapshot(junk.buffer, guest)).toBe(null);
+  });
+
   it("boss flag + hp ride the snapshot; unknown table idx degrades safely", () => {
     const s = createRunState({
       seed: 5,

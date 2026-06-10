@@ -145,7 +145,9 @@ export function makeCoop(version = "1") {
         const g = {
           id: from,
           slot: nextSlot++,
-          name: String(p.name || "Player").slice(0, 16),
+          name: String(p.name || "Player")
+            .replace(/[\x00-\x1f<>]/g, "")
+            .slice(0, 16),
           char: CHARACTERS[p.char] ? p.char : STARTER_ID,
           connected: false,
           born: performance.now(),

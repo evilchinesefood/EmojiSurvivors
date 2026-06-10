@@ -20,6 +20,9 @@ export const SAVE_KEY = "emojisurvivors-save";
 export const SIG_KEY = "emojisurvivors-save-sig";
 const LEGACY3D_KEY = "emojisurvivors3d-save";
 const LEGACY3D_SIG = "emojisurvivors3d-save-sig";
+// Sticky flag: the legacy fold ran. Gates idempotency independent of the legacy
+// key delete — if removeItem no-ops/fails, a surviving blob can never re-fold.
+const LEGACY_MERGED = "emojisurvivors-legacy-merged";
 export const SAVE_VERSION = 3;
 const SALT = "the-game-knows-what-you-did";
 
@@ -192,13 +195,17 @@ export function loadFrom(storage) {
     out = defaultSave();
   }
   // One-time fold of the short-lived separate 3D save into the shared one.
+  // The flag — not the legacy-key delete — guarantees this runs at most once,
+  // so a delete that silently no-ops can never double-bank additive counters.
   try {
-    const leg = storage && storage.getItem(LEGACY3D_KEY);
+    const merged = storage && storage.getItem(LEGACY_MERGED);
+    const leg = !merged && storage && storage.getItem(LEGACY3D_KEY);
     if (leg) {
       const l = migrate(JSON.parse(leg));
       if (!verified(storage, leg, LEGACY3D_SIG)) l.tainted = true;
       out = storage.getItem(SAVE_KEY) ? mergeSaves(out, l) : l;
       saveTo(storage, out);
+      storage.setItem(LEGACY_MERGED, "1"); // mark done before the (best-effort) delete
       storage.removeItem?.(LEGACY3D_KEY);
       storage.removeItem?.(LEGACY3D_SIG);
     }

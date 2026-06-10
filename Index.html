@@ -105,8 +105,39 @@
         text-transform: uppercase;
       }
       footer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
         color: var(--muted);
         font-size: 0.8rem;
+      }
+      a.gh {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1.1rem;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: linear-gradient(180deg, #1f1733, var(--panel));
+        color: var(--bone);
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition:
+          transform 0.1s ease,
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      a.gh:hover,
+      a.gh:focus-visible {
+        transform: translateY(-2px);
+        border-color: var(--arcane);
+        box-shadow: 0 8px 24px rgba(155, 108, 255, 0.25);
+      }
+      .copy {
+        max-width: 36rem;
+        line-height: 1.5;
       }
     </style>
   </head>
@@ -136,8 +167,27 @@
       </a>
     </div>
     <footer>
-      Saves are separate per version. Co-op rooms only match within the same
-      version.
+      <div>
+        Saves are separate per version. Co-op rooms only match within the same
+        version.
+      </div>
+      <a
+        class="gh"
+        href="https://github.com/evilchinesefood/EmojiSurvivors"
+        target="_blank"
+        rel="noopener"
+      >
+        <span aria-hidden="true">🐙</span> View on GitHub
+      </a>
+      <div class="copy">
+        Copyright © 2026 John David Ayers (
+        <a
+          href="mailto:john.d.ayers@gmail.com"
+          style="color: rgb(85, 85, 85); text-decoration: none"
+          >john.d.ayers@gmail.com</a
+        >
+        ). All rights reserved.
+      </div>
     </footer>
     <script>
       // This path used to host the 2D game — retire its old service worker (scoped

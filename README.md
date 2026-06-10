@@ -1,9 +1,11 @@
 # EmojiSurvivors 💀
 
 A spooky, browser-based **Vampire Survivors-style** bullet-heaven roguelite where every
-character, monster, projectile, and pickup is an **emoji** drawn on a `<canvas>`.
+character, monster, projectile, and pickup is an **emoji**. Ships in **two flavors from
+one codebase** — a top-down 2D canvas game and a first-person 3D (Three.js) rewrite that
+shares the exact same simulation.
 
-**▶ Play: https://dev.jdayers.com/survivors/**
+**▶ Play: https://dev.jdayers.com/survivors/** — pick **2D Classic** or **3D FPS**.
 
 Pick a survivor, choose how long you dare to last, then auto-attack endless swarms while
 you dodge, level up, and stitch together a synergistic loadout — until the boss shows up
@@ -31,11 +33,17 @@ at the deadline. Coins persist between runs to power up your account.
 - 1-of-3 (luck → 4) **level-up draws** with banish + reroll, XP gems, magnet, chests,
   revives. **WebAudio SFX** synthesized at runtime (zero audio files), particles, screen
   shake, and a drifting graveyard backdrop. Installable **PWA**, fully offline.
+- **Two dimensions, one sim** — a 2D top-down build and a 3D first-person build (mouse-look,
+  trigger fire, an instanced billboard world) that runs the identical engine.
+- **4-player online co-op** — host-authoritative WebRTC P2P with per-player level-ups, plus
+  full **gamepad** support. (Save data and leaderboards are shared across both versions.)
 
 ## Controls
 
-- **Desktop:** WASD / arrow keys to move. `Esc` / `P` to pause. Attacks are automatic.
-- **Mobile:** hold/drag anywhere — your survivor walks toward your finger. One-handed.
+- **2D desktop:** WASD / arrow keys to move. `Esc` / `P` to pause. Attacks are automatic.
+- **2D mobile:** hold/drag anywhere — your survivor walks toward your finger. One-handed.
+- **3D:** mouse-look + WASD, click to fire (or Auto Fire); touch has a dual-zone stick + look.
+- **Gamepad:** left stick moves, right stick aims/looks, trigger fires, Start pauses.
 
 ## Tech
 
@@ -48,22 +56,31 @@ sprites.
 
 ## Project layout
 
+One tree, one deploy — the renderer-agnostic core lives in `Shared/`, and the two version
+folders only carry their renderer, input, camera, and shell.
+
 ```
-Source/
+Index.html    version picker (2D Classic / 3D FPS)
+Shared/
   Engine/   fixed-timestep loop · seeded RNG · run state · state machine
-  World/    spatial hash (collision) · camera · object pool
+  World/    spatial hash (collision) · object pool
   Systems/  movement · spawner · weapons · combat · pickups · leveling · stats · evolutions   (pure, DOM-free)
   Content/  characters · weapons · passives · enemies · bosses · power grid · curves          (data-driven)
-  Render/   canvas renderer · particles · FX
-  Input/    keyboard + pointer/touch
+  Net/      WebRTC co-op — signaling · peer · binary snapshot protocol · session
+  Meta/     versioned localStorage save · account state · local + online leaderboards
   Audio/    WebAudio SFX synth
-  Meta/     versioned localStorage save + account state
   UI/       Web Awesome screens + HUD
+  Styles/   shared CSS · Vendor/ (Web Awesome + Font Awesome)
+2d/         Index · ServiceWorker · Source/{Main, Render (canvas), Input, Camera}
+3d/         Index · ServiceWorker · Source/{Main, Render (Three.js), Input (FPS), Camera, Vendor/Three}
 Tests/      zero-dep unit suite + seeded sim probe
 ```
 
+The PHP backends (online leaderboard + co-op signaling) live in `Api/` on the server and
+are **deployed separately via rsync — they are not part of this repository**.
+
 Adding content (a new weapon, enemy, character, power-grid row) is data-only — drop a def
-into `Source/Content/*` and it bolts on without touching the systems.
+into `Shared/Content/*` and it bolts on without touching the systems.
 
 ## License
 

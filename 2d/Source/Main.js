@@ -375,6 +375,7 @@ function guestQuit() {
   refreshToast(false);
   loop.setTimescale(1);
   machine.set(S.MENU);
+  reloadForUpdate(); // apply a deferred post-deploy update, same as quitToMenu
 }
 
 function quitToMenu() {

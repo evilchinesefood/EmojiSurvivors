@@ -9,7 +9,6 @@ export function makeSfx(getVolume) {
     gem: 0.05,
     coin: 0.03,
     hurt: 0.1,
-    damage: 999,
     honk: 0.15,
   };
 
