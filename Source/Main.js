@@ -494,6 +494,7 @@ const screens = {
   [S.PAUSED]: () =>
     PauseScreen({
       state,
+      meta,
       onResume: resume,
       onRestart: restart,
       onQuit: quitToMenu,

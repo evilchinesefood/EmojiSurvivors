@@ -5,6 +5,7 @@
 import { swapPop, emit } from "../Engine/State.js";
 
 const IFRAME = 0.6;
+const DEVIL_LINGER = 4; // kill #666 horns show this long, then fade out
 
 function heal(state, amt) {
   const p = state.player;
@@ -266,18 +267,24 @@ export function stepCombat(state, dt) {
     }
   }
 
-  // 4) enemy → player contact (i-frames)
+  // 4) enemy → player contact (i-frames). A crowd bites harder than a lone foe: the hit
+  // scales with how many enemies are actually on you, so standing in the swarm is fatal
+  // while kiting (few overlaps) stays survivable. Capped so a huge pile can't one-shot
+  // through the i-frame window.
   if (p.invuln <= 0) {
     state.hash.queryCircle(p.x, p.y, 44, near);
     let worstE = null;
+    let crowd = 0;
     for (let j = 0; j < near.length; j++) {
       const e = near[j];
       if (e.dead || e.dmg <= 0) continue; // harmless specials (disco) can't hit
       const dx = e.x - p.x;
       const dy = e.y - p.y;
       const reach = 16 + e.size * 0.5;
-      if (dx * dx + dy * dy <= reach * reach && (!worstE || e.dmg > worstE.dmg))
-        worstE = e;
+      if (dx * dx + dy * dy <= reach * reach) {
+        crowd++;
+        if (!worstE || e.dmg > worstE.dmg) worstE = e;
+      }
     }
     if (worstE) {
       // Shadowstep: dodge the hit outright; the dodge consumes the i-frame window
@@ -286,7 +293,8 @@ export function stepCombat(state, dt) {
         p.invuln = IFRAME;
         emit(state, "dodge");
       } else {
-        damagePlayer(state, worstE.dmg);
+        const crowdMul = Math.min(1 + (crowd - 1) * 0.6, 5); // each extra attacker piles on
+        damagePlayer(state, worstE.dmg * crowdMul);
         const reflect =
           state.stats.thorns +
           (state.gimmick === "backlash" ? 6 + worstE.maxHp * 0.1 : 0);
@@ -301,8 +309,8 @@ export function stepCombat(state, dt) {
     const e = en[i];
     if (!e.dead) continue;
     p.kills += 1;
-    if (p.kills === 666 && !state.devil) {
-      state.devil = true;
+    if (p.kills === 666) {
+      state.devil = DEVIL_LINGER;
       emit(state, "devil", { x: e.x, y: e.y });
     }
     if (e.boss) {

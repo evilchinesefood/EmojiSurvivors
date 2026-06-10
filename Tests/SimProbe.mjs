@@ -345,6 +345,23 @@ function main() {
       ")",
   );
 
+  // Standing still must be punished on NORMAL too — the swarm overwhelms a passive
+  // player even without Hard's multipliers. A no-grid knight that never moves should
+  // die before the deadline: active play wins, sitting still does not.
+  const afkN = drive({
+    seed: 1234,
+    runLength: 300,
+    characterId: "knight",
+    seconds: 300,
+    still: true,
+  });
+  ok(
+    afkN.s.outcome === "gameover",
+    "standing still on NORMAL must lose (got " +
+      (afkN.s.outcome || "survived") +
+      ")",
+  );
+
   // The 30-min length spawns its own boss and is winnable by an invested account.
   const v30 = drive({
     seed: 1234,

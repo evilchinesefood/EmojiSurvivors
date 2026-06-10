@@ -39,6 +39,7 @@ export function stepSim(state, dt) {
   }
   if (p.invuln > 0) p.invuln -= dt;
   if (p.hitFlash > 0) p.hitFlash -= dt;
+  if (state.devil > 0) state.devil -= dt;
   state.time += dt;
 }
 

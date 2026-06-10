@@ -36,28 +36,41 @@ export function entrySig(e) {
   );
 }
 
-// Fire-and-forget; callers never await this on the critical path.
+// Fire-and-forget; callers never await this on the critical path. A hard timeout keeps
+// a hung server from leaking a pending request/connection per submit.
 export async function postRun(entry, name) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), 6000);
   try {
     await fetch(API, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ entry, name: name || "", sig: entrySig(entry) }),
+      signal: c.signal,
     });
   } catch {
-    /* offline / no PHP — fine */
+    /* offline / no PHP / timeout — fine */
+  } finally {
+    clearTimeout(t);
   }
 }
 
 export async function fetchBoard(key) {
+  // Hard timeout (covers the body read too): a hung/slow server returns null instead of
+  // pinning the Records "summoning…" state forever. RecordsScreen renders null as offline.
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), 8000);
   try {
     const r = await fetch(API + "?board=" + encodeURIComponent(key), {
       cache: "no-store",
+      signal: c.signal,
     });
     if (!r.ok) return null;
     const j = await r.json();
     return Array.isArray(j.entries) ? j.entries : null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(t);
   }
 }

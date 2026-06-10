@@ -18,7 +18,7 @@ export function makeRenderer(ctx) {
     }
     return f;
   }
-  function emoji(ch, sx, sy, size) {
+  function emoji(ch, sx, sy, size, alpha = 1) {
     const f = fontFor(size);
     if (f !== lastFont) {
       ctx.font = f;
@@ -26,8 +26,9 @@ export function makeRenderer(ctx) {
     }
     // Color emoji honor the fill's ALPHA: the hazard pass (every weapon fire) leaves
     // fillStyle at a low-alpha color, which made actors drawn after it render ~10%
-    // opaque — a per-attack flash. Force full opacity for every emoji.
-    ctx.globalAlpha = 1;
+    // opaque — a per-attack flash. Default to full opacity; callers fading out
+    // (e.g. the #666 horns) pass an explicit alpha.
+    ctx.globalAlpha = alpha;
     ctx.fillStyle = "#fff";
     ctx.fillText(ch, sx, sy);
   }
@@ -341,7 +342,11 @@ export function makeRenderer(ctx) {
         ctx.fill();
       }
       emoji(state.tainted ? "🤡" : state.character.emoji, sx, sy, 30);
-      if (state.devil) emoji("😈", sx, sy - 24, 13); // kill #666 horns
+      if (state.devil > 0) {
+        // kill #666 horns: solid, then fade over the final second
+        emoji("😈", sx, sy - 24, 13, Math.min(1, state.devil));
+        ctx.globalAlpha = 1;
+      }
     }
   }
 

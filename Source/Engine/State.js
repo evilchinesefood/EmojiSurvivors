@@ -100,7 +100,7 @@ export function createRunState({
     },
     // Graveyard Cat: 1-in-40 seeds gains a cosmetic companion (no RNG consumed).
     cat: seed % 40 === 13 ? { x: -70, y: -50 } : null,
-    devil: false, // set at kill #666 — cosmetic horns for the rest of the run
+    devil: 0, // kill #666 horns: seconds left to show (counts down, then fades)
     awaitingLevelUp: startLevel > 1, // Head Start grants immediate picks
     pendingLevelUps: startLevel - 1,
     rerollsLeft: stats.rerolls,

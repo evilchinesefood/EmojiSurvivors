@@ -159,7 +159,7 @@ export const POWER_GRID = {
     desc: "+1.5% damage / level — forever",
     max: 9999,
     infinite: true,
-    cost: geo(800, 1.3),
+    cost: geo(800, 1.15),
     mods: [{ stat: "might", op: "mul", value: 1.015 }],
   },
 };

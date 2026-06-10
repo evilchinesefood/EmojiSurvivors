@@ -1,5 +1,6 @@
 import { h } from "./Dom.js";
 import { icon } from "./Icons.js";
+import { SettingsScreen } from "./SettingsScreen.js";
 import { WEAPONS, scaleWeapon, MAX_WEAPON_LEVEL } from "../Content/Weapons.js";
 import { PASSIVES } from "../Content/Passives.js";
 
@@ -90,6 +91,12 @@ export function PauseScreen(ctx) {
     "Resume",
   );
   resume.addEventListener("click", () => ctx.onResume());
+  const settings = h(
+    "wa-button",
+    { size: "l", appearance: "outlined" },
+    icon("settings", { slot: "start" }),
+    "Settings",
+  );
   const restart = h(
     "wa-button",
     { size: "l", appearance: "outlined" },
@@ -105,7 +112,7 @@ export function PauseScreen(ctx) {
   );
   quit.addEventListener("click", () => ctx.onQuit());
 
-  return h(
+  const root = h(
     "div",
     { class: "screen screen-dim" },
     h(
@@ -114,6 +121,22 @@ export function PauseScreen(ctx) {
       "Paused",
     ),
     loadout,
-    h("div", { class: "menu-actions" }, resume, restart, quit),
+    h("div", { class: "menu-actions" }, resume, settings, restart, quit),
   );
+
+  // Settings open over the pause panel (same PAUSED state — no resume), so mid-run
+  // tweaks like volume or aim apply live; setSetting persists each change immediately.
+  settings.addEventListener("click", () => {
+    const panel = SettingsScreen({
+      meta: ctx.meta,
+      onBack: () => {
+        panel.remove();
+        settings.focus?.();
+      },
+    });
+    root.appendChild(panel);
+    panel.querySelector("input, wa-button, button")?.focus?.();
+  });
+
+  return root;
 }
