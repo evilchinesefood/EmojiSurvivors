@@ -10,19 +10,19 @@
   "theme_color": "#0e0b14",
   "icons": [
     {
-      "src": "./Source/Assets/Icon.svg",
+      "src": "../Shared/Assets/Icon.svg",
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "any"
     },
     {
-      "src": "./Source/Assets/Icon192.png",
+      "src": "../Shared/Assets/Icon192.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any"
     },
     {
-      "src": "./Source/Assets/Icon512.png",
+      "src": "../Shared/Assets/Icon512.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"

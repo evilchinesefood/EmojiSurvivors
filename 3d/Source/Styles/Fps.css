@@ -1,0 +1,95 @@
+/* First-person chrome: crosshair, hurt vignette, weapon viewmodel, horns badge.
+   All pointer-transparent overlays between the canvas (z 0) and the HUD (z 10). */
+.fps-crosshair {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+}
+.fps-crosshair::before,
+.fps-crosshair::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(236, 233, 224, 0.85);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+}
+.fps-crosshair::before {
+  width: 2px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+}
+.fps-crosshair::after {
+  width: 14px;
+  height: 2px;
+  transform: translate(-50%, -50%);
+}
+.fps-crosshair span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(155, 108, 255, 0.9);
+  transform: translate(-50%, -50%);
+}
+
+.fps-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(192, 53, 74, 0) 42%,
+    rgba(192, 53, 74, 0.55) 100%
+  );
+}
+
+.fps-viewmodel {
+  position: fixed;
+  right: 16vw;
+  bottom: -2vh;
+  z-index: 3;
+  font-size: clamp(5rem, 16vh, 9rem);
+  line-height: 1;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+  user-select: none;
+}
+
+.fps-fire {
+  position: fixed;
+  right: max(4vw, env(safe-area-inset-right));
+  bottom: max(7vh, env(safe-area-inset-bottom));
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 2px solid rgba(155, 108, 255, 0.7);
+  background: rgba(20, 14, 30, 0.55);
+  font-size: 2.2rem;
+  z-index: 6;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.fps-fire:active {
+  background: rgba(155, 108, 255, 0.35);
+}
+
+.fps-horns {
+  position: fixed;
+  left: 50%;
+  top: calc(50% - 52px);
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 1.6rem;
+  pointer-events: none;
+}

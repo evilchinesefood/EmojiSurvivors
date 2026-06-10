@@ -1,0 +1,31 @@
+# EmojiSurvivors — static hosting config (Apache). Single screen: NO route rewrites.
+
+# PascalCase entry file: Apache's default DirectoryIndex is lowercase-only,
+# so a bare /survivors/ would 403 without this.
+<IfModule mod_dir.c>
+  DirectoryIndex Index.html index.html
+</IfModule>
+
+# Correct MIME types for native ES modules + PWA assets.
+<IfModule mod_mime.c>
+  AddType text/javascript .js
+  AddType text/javascript .mjs
+  AddType application/manifest+json .webmanifest
+  AddType image/svg+xml .svg
+  AddType font/woff2 .woff2
+</IfModule>
+
+# Always revalidate the service worker so updates ship promptly,
+# plus baseline security headers.
+<IfModule mod_headers.c>
+  <FilesMatch "ServiceWorker\.js$">
+    Header set Cache-Control "no-cache, max-age=0"
+  </FilesMatch>
+  Header set X-Content-Type-Options nosniff
+  Header set Referrer-Policy no-referrer
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+</IfModule>
+
+# Deny direct access to dotfiles (.htaccess, .npmrc, .git, etc.) — but never
+# /.well-known/ (ACME renewals, PWA assetlinks live there by web standard).
+RedirectMatch 404 "/\.(?!well-known/)"

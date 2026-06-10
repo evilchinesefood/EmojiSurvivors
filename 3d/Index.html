@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" class="wa-theme-default wa-palette-default es-theme">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0e0b14" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="EmojiSurvivors 3D" />
+    <title>EmojiSurvivors 3D</title>
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="../Shared/Assets/Icon192.png"
+    />
+    <link rel="apple-touch-icon" href="../Shared/Assets/Icon192.png" />
+    <link rel="manifest" href="./Manifest.webmanifest" />
+    <!-- Web Awesome v3.7.0 (vendored, buildless) -->
+    <link
+      rel="stylesheet"
+      href="../Shared/Vendor/WebAwesome/styles/webawesome.css"
+    />
+    <script
+      type="module"
+      src="../Shared/Vendor/WebAwesome/webawesome.loader.js"
+      data-webawesome="../Shared/Vendor/WebAwesome/"
+    ></script>
+    <!-- Font Awesome Pro Duotone (vendored webfonts) -->
+    <link
+      rel="stylesheet"
+      href="../Shared/Vendor/FontAwesome/css/fontawesome.css"
+    />
+    <link
+      rel="stylesheet"
+      href="../Shared/Vendor/FontAwesome/css/duotone.css"
+    />
+    <!-- Palette first, then theme overrides consume it -->
+    <link rel="stylesheet" href="../Shared/Styles/Theme.css" />
+    <link rel="stylesheet" href="../Shared/Styles/Reset.css" />
+    <link rel="stylesheet" href="../Shared/Styles/WaTheme.css" />
+    <link rel="stylesheet" href="../Shared/Styles/Canvas.css" />
+    <link rel="stylesheet" href="../Shared/Styles/Layout.css" />
+    <link rel="stylesheet" href="../Shared/Styles/Hud.css" />
+    <link rel="stylesheet" href="./Source/Styles/Fps.css" />
+  </head>
+  <body>
+    <h1 class="sr-only">EmojiSurvivors 3D</h1>
+    <canvas
+      id="Game"
+      role="img"
+      aria-label="EmojiSurvivors 3D game field"
+    ></canvas>
+    <div id="Vignette" class="fps-vignette" aria-hidden="true"></div>
+    <div id="Crosshair" class="fps-crosshair" aria-hidden="true" hidden>
+      <span></span>
+    </div>
+    <div id="Horns" class="fps-horns" aria-hidden="true" hidden>😈</div>
+    <div id="Viewmodel" class="fps-viewmodel" aria-hidden="true" hidden></div>
+    <button id="FireBtn" class="fps-fire" aria-label="Fire" hidden>🎯</button>
+    <div id="CoopToast" class="coop-toast" hidden></div>
+    <div id="Hud" class="hud" hidden></div>
+    <div id="Overlay" class="overlay-layer"></div>
+    <div id="Live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+    <script type="module" src="./Source/Main.js"></script>
+  </body>
+</html>

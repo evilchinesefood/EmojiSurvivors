@@ -1,16 +1,16 @@
 import { describe, it, expect } from "./Runner.js";
-import { CHARACTERS, CHARACTER_IDS } from "../Source/Content/Characters.js";
-import { WEAPONS, BASE_WEAPON_IDS } from "../Source/Content/Weapons.js";
-import { PASSIVES } from "../Source/Content/Passives.js";
-import { POWER_GRID } from "../Source/Content/PowerGrid.js";
-import { ENEMIES, NORMAL_TIERS, ELITE_IDS } from "../Source/Content/Enemies.js";
-import { resolveModifiers } from "../Source/Content/Modifiers.js";
-import { resolve } from "../Source/Systems/StatsModel.js";
-import { createRunState } from "../Source/Engine/State.js";
-import { levelUpChoices, applyChoice } from "../Source/Systems/Leveling.js";
-import { RUN_LENGTHS } from "../Source/Content/Curve.js";
-import { bossFor } from "../Source/Content/Bosses.js";
-import { makeMeta } from "../Source/Meta/Meta.js";
+import { CHARACTERS, CHARACTER_IDS } from "../Shared/Content/Characters.js";
+import { WEAPONS, BASE_WEAPON_IDS } from "../Shared/Content/Weapons.js";
+import { PASSIVES } from "../Shared/Content/Passives.js";
+import { POWER_GRID } from "../Shared/Content/PowerGrid.js";
+import { ENEMIES, NORMAL_TIERS, ELITE_IDS } from "../Shared/Content/Enemies.js";
+import { resolveModifiers } from "../Shared/Content/Modifiers.js";
+import { resolve } from "../Shared/Systems/StatsModel.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { levelUpChoices, applyChoice } from "../Shared/Systems/Leveling.js";
+import { RUN_LENGTHS } from "../Shared/Content/Curve.js";
+import { bossFor } from "../Shared/Content/Bosses.js";
+import { makeMeta } from "../Shared/Meta/Meta.js";
 
 describe("Expansion — roster + weapons", () => {
   it("10 characters, each with a valid starting weapon", () => {

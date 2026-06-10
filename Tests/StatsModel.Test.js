@@ -3,8 +3,8 @@ import {
   resolve,
   BASE_MAXHP,
   BASE_SPEED,
-} from "../Source/Systems/StatsModel.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
+} from "../Shared/Systems/StatsModel.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
 
 describe("StatsModel.resolve", () => {
   it("returns sane defaults for an empty build", () => {

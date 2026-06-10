@@ -2,11 +2,11 @@
 // competent kiting + priority-pick policy and asserts invariants: no NaN/Infinity,
 // bounded entity counts, the player levels up, coins accrue, and the run survives to
 // the deadline. Boss + victory assertions are added at M4. Reproducible via the seed.
-import { createRunState } from "../Source/Engine/State.js";
-import { stepSim, STEP } from "../Source/Engine/GameLoop.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
-import { levelUpChoices, applyChoice } from "../Source/Systems/Leveling.js";
-import { WEAPONS, MAX_WEAPON_LEVEL } from "../Source/Content/Weapons.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { stepSim, STEP } from "../Shared/Engine/GameLoop.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
+import { levelUpChoices, applyChoice } from "../Shared/Systems/Leveling.js";
+import { WEAPONS, MAX_WEAPON_LEVEL } from "../Shared/Content/Weapons.js";
 
 function fail(msg) {
   console.error("SimProbe FAIL: " + msg);

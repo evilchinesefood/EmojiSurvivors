@@ -1,8 +1,8 @@
 import { describe, it, expect } from "./Runner.js";
-import { WEAPONS, BASE_WEAPON_IDS } from "../Source/Content/Weapons.js";
-import { PASSIVES } from "../Source/Content/Passives.js";
-import { CHARACTERS, CHARACTER_IDS } from "../Source/Content/Characters.js";
-import { ENEMIES, NORMAL_TIERS, ELITE_IDS } from "../Source/Content/Enemies.js";
+import { WEAPONS, BASE_WEAPON_IDS } from "../Shared/Content/Weapons.js";
+import { PASSIVES } from "../Shared/Content/Passives.js";
+import { CHARACTERS, CHARACTER_IDS } from "../Shared/Content/Characters.js";
+import { ENEMIES, NORMAL_TIERS, ELITE_IDS } from "../Shared/Content/Enemies.js";
 
 describe("Content additions", () => {
   it("Bone Spear → Soul Reaper evolution chain is wired", () => {

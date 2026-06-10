@@ -6,7 +6,7 @@ import {
   saveTo,
   SAVE_KEY,
   SAVE_VERSION,
-} from "../Source/Meta/Save.js";
+} from "../Shared/Meta/Save.js";
 
 function mem(seed) {
   const store = seed ? { ...seed } : {};

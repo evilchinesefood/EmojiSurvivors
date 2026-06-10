@@ -5,9 +5,9 @@ import {
   insertEntry,
   topFor,
   BOARD_CAP,
-} from "../Source/Meta/Records.js";
-import { migrate } from "../Source/Meta/Save.js";
-import { makeMeta } from "../Source/Meta/Meta.js";
+} from "../Shared/Meta/Records.js";
+import { migrate } from "../Shared/Meta/Save.js";
+import { makeMeta } from "../Shared/Meta/Meta.js";
 
 const E = (over = {}) => ({
   date: 1000,

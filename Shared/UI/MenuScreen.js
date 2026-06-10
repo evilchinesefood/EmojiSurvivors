@@ -68,7 +68,12 @@ export function MenuScreen(ctx) {
     "div",
     { class: "screen screen-menu" },
     wallet,
-    h("div", { class: "title title-xl" }, em, " EmojiSurvivors"),
+    h(
+      "div",
+      { class: "title title-xl" },
+      em,
+      " " + (ctx.title || "EmojiSurvivors"),
+    ),
     h("div", { class: "subtitle" }, subtitle),
     h("div", { class: "menu-actions" }, play, coop, shop, records, settings),
   );

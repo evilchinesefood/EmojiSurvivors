@@ -1,5 +1,5 @@
 import { describe, it, expect } from "./Runner.js";
-import { difficulty, xpForLevel } from "../Source/Content/Curve.js";
+import { difficulty, xpForLevel } from "../Shared/Content/Curve.js";
 
 describe("Curve", () => {
   it("xpForLevel is strictly increasing", () => {

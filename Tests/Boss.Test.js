@@ -1,9 +1,9 @@
 import { describe, it, expect } from "./Runner.js";
-import { createRunState } from "../Source/Engine/State.js";
-import { stepSpawner, spawnBoss } from "../Source/Systems/Spawner.js";
-import { stepCombat } from "../Source/Systems/CombatSystem.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
-import { bossFor } from "../Source/Content/Bosses.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { stepSpawner, spawnBoss } from "../Shared/Systems/Spawner.js";
+import { stepCombat } from "../Shared/Systems/CombatSystem.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
+import { bossFor } from "../Shared/Content/Bosses.js";
 
 function run(runLength = 300) {
   return createRunState({

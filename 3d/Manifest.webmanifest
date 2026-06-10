@@ -1,0 +1,31 @@
+{
+  "name": "EmojiSurvivors 3D",
+  "short_name": "EmojiSurvivors3D",
+  "description": "A spooky emoji bullet-heaven roguelite in first person. Survive the swarm, build your loadout, slay the boss.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0e0b14",
+  "theme_color": "#0e0b14",
+  "icons": [
+    {
+      "src": "../Shared/Assets/Icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "../Shared/Assets/Icon192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "../Shared/Assets/Icon512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

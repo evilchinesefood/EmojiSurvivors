@@ -1,11 +1,11 @@
 import { describe, it, expect } from "./Runner.js";
-import { createRunState } from "../Source/Engine/State.js";
+import { createRunState } from "../Shared/Engine/State.js";
 import {
   stepLeveling,
   levelUpChoices,
   applyChoice,
-} from "../Source/Systems/Leveling.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
+} from "../Shared/Systems/Leveling.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
 
 function run(charId = "knight") {
   return createRunState({

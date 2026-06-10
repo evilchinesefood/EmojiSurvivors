@@ -21,7 +21,7 @@ const SNAP_MS = 50; // 20Hz
 const INPUT_MS = 50;
 const LERP_DELAY = 120;
 
-export function makeCoop() {
+export function makeCoop(version = "1") {
   const C = {
     mode: "off", // off | host | guest
     room: "",
@@ -127,6 +127,13 @@ export function makeCoop() {
     poller = signal.makePoller(C.room, "host", (from, p) => {
       if (p.t === "hello") {
         if (guests.has(from)) return;
+        if (p.v !== version) {
+          signal.send(C.room, "host", from, {
+            t: "reject",
+            reason: "Different game version (2D vs 3D)",
+          });
+          return;
+        }
         if (guests.size >= MAX_GUESTS || C.started) {
           // Tell them why — silence reads as "joining doesn't work".
           signal.send(C.room, "host", from, {
@@ -394,6 +401,7 @@ export function makeCoop() {
       t: "hello",
       name,
       char: charId,
+      v: version,
     });
     if (!ok) {
       shutdown();

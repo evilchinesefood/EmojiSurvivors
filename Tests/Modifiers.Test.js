@@ -5,11 +5,11 @@ import {
   modValueLabel,
   unlockLabel,
   MOD_DEFS,
-} from "../Source/Content/Modifiers.js";
-import { createRunState } from "../Source/Engine/State.js";
-import { stepSpawner } from "../Source/Systems/Spawner.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
-import { makeMeta } from "../Source/Meta/Meta.js";
+} from "../Shared/Content/Modifiers.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { stepSpawner } from "../Shared/Systems/Spawner.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
+import { makeMeta } from "../Shared/Meta/Meta.js";
 
 function memStore() {
   const m = {};

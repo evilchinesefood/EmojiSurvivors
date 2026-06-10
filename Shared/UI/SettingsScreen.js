@@ -1,3 +1,6 @@
+// Shared by both versions: ctx.fps=true (3D) surfaces Auto Fire + Look
+// Sensitivity; ctx.fps=false (2D) surfaces Manual Aim. The save holds the union
+// of keys, so switching versions never loses a setting.
 import { h } from "./Dom.js";
 import { icon } from "./Icons.js";
 
@@ -35,7 +38,6 @@ export function SettingsScreen(ctx) {
 
   const shake = toggle(s.shake, "shake", "Screen Shake");
   const dmg = toggle(s.damageNumbers, "damageNumbers", "Damage Numbers");
-  const aim = toggle(s.manualAim, "manualAim", "Manual Aim");
   // Reduced Motion defaults from the OS preference until the player sets it explicitly.
   const reduceEff =
     s.reducedMotion != null
@@ -53,6 +55,29 @@ export function SettingsScreen(ctx) {
       h("span", { class: "hud-stat" }, icon(ic), " " + label),
       control,
     );
+
+  const versionRows = [];
+  if (ctx.fps) {
+    const autoFire = toggle(s.autoFire, "autoFire", "Auto Fire");
+    const sens = h("input", {
+      type: "range",
+      min: "20",
+      max: "300",
+      value: String(Math.round((s.sensitivity ?? 1) * 100)),
+      class: "es-range",
+      "aria-label": "Look Sensitivity",
+    });
+    sens.addEventListener("input", () =>
+      ctx.meta.setSetting("sensitivity", Number(sens.value) / 100),
+    );
+    versionRows.push(
+      row("bolt", "Auto Fire", autoFire),
+      row("swords", "Look Sensitivity", sens),
+    );
+  } else {
+    const aim = toggle(s.manualAim, "manualAim", "Manual Aim");
+    versionRows.push(row("swords", "Manual Aim", aim));
+  }
 
   const back = h(
     "wa-button",
@@ -78,7 +103,7 @@ export function SettingsScreen(ctx) {
       row("shake", "Screen Shake", shake),
       row("motion", "Reduced Motion", reduce),
       row("hash", "Damage Numbers", dmg),
-      row("swords", "Manual Aim", aim),
+      versionRows,
     ),
     back,
   );

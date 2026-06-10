@@ -1,8 +1,8 @@
 import { describe, it, expect } from "./Runner.js";
-import { createRunState } from "../Source/Engine/State.js";
-import { stepSpawner } from "../Source/Systems/Spawner.js";
-import { difficulty } from "../Source/Content/Curve.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { stepSpawner } from "../Shared/Systems/Spawner.js";
+import { difficulty } from "../Shared/Content/Curve.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
 
 function run() {
   return createRunState({

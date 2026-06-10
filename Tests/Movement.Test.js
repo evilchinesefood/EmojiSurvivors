@@ -1,7 +1,7 @@
 import { describe, it, expect } from "./Runner.js";
-import { createRunState } from "../Source/Engine/State.js";
-import { stepSim } from "../Source/Engine/GameLoop.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { stepSim } from "../Shared/Engine/GameLoop.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
 
 function run() {
   return createRunState({

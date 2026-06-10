@@ -1,35 +1,35 @@
 // Boot orchestrator: builds sim + renderer + input + HUD + UI shell, owns the rAF
 // loop, and routes state-machine transitions. The sim only advances while PLAYING;
 // every other state freezes it and the shell shows an overlay.
-import { S, makeMachine } from "./Engine/StateMachine.js";
-import { createRunState } from "./Engine/State.js";
-import { stepSim, createLoop } from "./Engine/GameLoop.js";
+import { S, makeMachine } from "../../Shared/Engine/StateMachine.js";
+import { createRunState } from "../../Shared/Engine/State.js";
+import { stepSim, createLoop } from "../../Shared/Engine/GameLoop.js";
 import { makeCamera } from "./World/Camera.js";
 import { makeRenderer } from "./Render/Renderer.js";
 import { makeParticles } from "./Render/Particles.js";
 import { makeFx } from "./Render/Fx.js";
 import { makeInput } from "./Input/Input.js";
-import { makeHud } from "./UI/Hud.js";
-import { makeShell } from "./UI/Shell.js";
-import { mount } from "./UI/Dom.js";
-import { MenuScreen } from "./UI/MenuScreen.js";
-import { SelectScreen } from "./UI/SelectScreen.js";
-import { RecordsScreen } from "./UI/RecordsScreen.js";
-import { postRun } from "./Meta/OnlineBoard.js";
-import { ConfigScreen } from "./UI/ConfigScreen.js";
-import { PauseScreen } from "./UI/PauseScreen.js";
-import { LevelUpScreen } from "./UI/LevelUpScreen.js";
-import { ResultScreen } from "./UI/ResultScreen.js";
-import { ShopScreen } from "./UI/ShopScreen.js";
-import { SettingsScreen } from "./UI/SettingsScreen.js";
-import { CoopScreen, GuestPauseScreen } from "./UI/CoopScreen.js";
-import { makeCoop } from "./Net/Coop.js";
-import { levelUpChoices, applyChoice } from "./Systems/Leveling.js";
-import { makeSfx } from "./Audio/Sfx.js";
-import { makeMeta } from "./Meta/Meta.js";
-import { CHARACTERS, STARTER_ID } from "./Content/Characters.js";
-import { WEAPONS, scaleWeapon } from "./Content/Weapons.js";
-import { PASSIVES } from "./Content/Passives.js";
+import { makeHud } from "../../Shared/UI/Hud.js";
+import { makeShell } from "../../Shared/UI/Shell.js";
+import { mount } from "../../Shared/UI/Dom.js";
+import { MenuScreen } from "../../Shared/UI/MenuScreen.js";
+import { SelectScreen } from "../../Shared/UI/SelectScreen.js";
+import { RecordsScreen } from "../../Shared/UI/RecordsScreen.js";
+import { postRun } from "../../Shared/Meta/OnlineBoard.js";
+import { ConfigScreen } from "../../Shared/UI/ConfigScreen.js";
+import { PauseScreen } from "../../Shared/UI/PauseScreen.js";
+import { LevelUpScreen } from "../../Shared/UI/LevelUpScreen.js";
+import { ResultScreen } from "../../Shared/UI/ResultScreen.js";
+import { ShopScreen } from "../../Shared/UI/ShopScreen.js";
+import { SettingsScreen } from "../../Shared/UI/SettingsScreen.js";
+import { CoopScreen, GuestPauseScreen } from "../../Shared/UI/CoopScreen.js";
+import { makeCoop } from "../../Shared/Net/Coop.js";
+import { levelUpChoices, applyChoice } from "../../Shared/Systems/Leveling.js";
+import { makeSfx } from "../../Shared/Audio/Sfx.js";
+import { makeMeta } from "../../Shared/Meta/Meta.js";
+import { CHARACTERS, STARTER_ID } from "../../Shared/Content/Characters.js";
+import { WEAPONS, scaleWeapon } from "../../Shared/Content/Weapons.js";
+import { PASSIVES } from "../../Shared/Content/Passives.js";
 
 // Display heuristic (not sim logic): rough damage-per-second of the final build.
 function estimateDps(s) {
@@ -140,7 +140,7 @@ const seasonal = {
 const renderer = makeRenderer(ctx);
 const particles = makeParticles();
 const fx = makeFx();
-const coop = makeCoop();
+const coop = makeCoop("2d");
 let ctrlToastMsg = "";
 function refreshToast(downed) {
   const msg = downed ? "💀 Down — respawning…" : ctrlToastMsg;
@@ -510,6 +510,7 @@ const screens = {
       meta,
       seasonal,
       quack,
+      title: "EmojiSurvivors",
       onPlay: () => {
         quack = false;
         machine.set(S.SELECT);
@@ -526,7 +527,7 @@ const screens = {
       refresh: () => shell.render(),
     }),
   [S.SETTINGS]: () =>
-    SettingsScreen({ meta, onBack: () => machine.set(S.MENU) }),
+    SettingsScreen({ meta, fps: false, onBack: () => machine.set(S.MENU) }),
   [S.RECORDS]: () => RecordsScreen({ meta, onBack: () => machine.set(S.MENU) }),
   [S.SELECT]: () =>
     SelectScreen({

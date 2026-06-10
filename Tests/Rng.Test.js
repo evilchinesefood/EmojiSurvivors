@@ -1,5 +1,5 @@
 import { describe, it, expect } from "./Runner.js";
-import { makeRng, mixSeed } from "../Source/Engine/Rng.js";
+import { makeRng, mixSeed } from "../Shared/Engine/Rng.js";
 
 describe("Rng", () => {
   it("is deterministic for a seed", () => {

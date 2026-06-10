@@ -6,12 +6,12 @@ import {
   tableAdd,
   packSnapshot,
   unpackSnapshot,
-} from "../Source/Net/Protocol.js";
-import { createRunState, addAlly } from "../Source/Engine/State.js";
-import { spawnEnemy, spawnBoss } from "../Source/Systems/Spawner.js";
-import { difficulty } from "../Source/Content/Curve.js";
-import { ENEMIES } from "../Source/Content/Enemies.js";
-import { CHARACTERS, STARTER_ID } from "../Source/Content/Characters.js";
+} from "../Shared/Net/Protocol.js";
+import { createRunState, addAlly } from "../Shared/Engine/State.js";
+import { spawnEnemy, spawnBoss } from "../Shared/Systems/Spawner.js";
+import { difficulty } from "../Shared/Content/Curve.js";
+import { ENEMIES } from "../Shared/Content/Enemies.js";
+import { CHARACTERS, STARTER_ID } from "../Shared/Content/Characters.js";
 
 describe("Co-op protocol", () => {
   it("snapshot round-trips entities, players, and string tables", () => {

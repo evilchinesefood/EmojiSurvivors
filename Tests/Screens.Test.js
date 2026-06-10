@@ -37,10 +37,10 @@ globalThis.Node =
     }
   };
 
-const { MenuScreen } = await import("../Source/UI/MenuScreen.js");
+const { MenuScreen } = await import("../Shared/UI/MenuScreen.js");
 const { CoopScreen, GuestPauseScreen } =
-  await import("../Source/UI/CoopScreen.js");
-const { makeMeta } = await import("../Source/Meta/Meta.js");
+  await import("../Shared/UI/CoopScreen.js");
+const { makeMeta } = await import("../Shared/Meta/Meta.js");
 
 const storage = (() => {
   const m = new Map();

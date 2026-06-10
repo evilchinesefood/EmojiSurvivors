@@ -1,12 +1,10 @@
-# EmojiSurvivors — static hosting config (Apache). Single screen: NO route rewrites.
-
-# PascalCase entry file: Apache's default DirectoryIndex is lowercase-only,
-# so a bare /survivors/ would 403 without this.
+# EmojiSurvivors — merged tree: picker at the root, the games in 2d/ + 3d/,
+# common modules in Shared/. PascalCase entry needs an explicit DirectoryIndex.
 <IfModule mod_dir.c>
   DirectoryIndex Index.html index.html
 </IfModule>
 
-# Correct MIME types for native ES modules + PWA assets.
+# Correct MIME types for native ES modules + PWA assets (Shared/ serves both games).
 <IfModule mod_mime.c>
   AddType text/javascript .js
   AddType text/javascript .mjs
@@ -15,17 +13,10 @@
   AddType font/woff2 .woff2
 </IfModule>
 
-# Always revalidate the service worker so updates ship promptly,
-# plus baseline security headers.
 <IfModule mod_headers.c>
-  <FilesMatch "ServiceWorker\.js$">
-    Header set Cache-Control "no-cache, max-age=0"
-  </FilesMatch>
   Header set X-Content-Type-Options nosniff
   Header set Referrer-Policy no-referrer
-  Header set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
 </IfModule>
 
-# Deny direct access to dotfiles (.htaccess, .npmrc, .git, etc.) — but never
-# /.well-known/ (ACME renewals, PWA assetlinks live there by web standard).
+# Deny direct access to dotfiles — but never /.well-known/.
 RedirectMatch 404 "/\.(?!well-known/)"

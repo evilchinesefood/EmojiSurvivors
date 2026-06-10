@@ -1,7 +1,7 @@
 import { describe, it, expect } from "./Runner.js";
-import { createRunState } from "../Source/Engine/State.js";
-import { stepPickups } from "../Source/Systems/PickupSystem.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { stepPickups } from "../Shared/Systems/PickupSystem.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
 
 function run(charId = "knight") {
   return createRunState({

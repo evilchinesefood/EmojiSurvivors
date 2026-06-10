@@ -2,19 +2,19 @@
 // gated ally weapons, and pickup crediting. Solo behavior is covered by every
 // other suite (allies stays empty there).
 import { describe, it, expect } from "./Runner.js";
-import { createRunState, addAlly, removeAlly } from "../Source/Engine/State.js";
+import { createRunState, addAlly, removeAlly } from "../Shared/Engine/State.js";
 import {
   stepAllies,
   stepEnemies,
   movePlayer,
-} from "../Source/Systems/Movement.js";
-import { stepWeapons } from "../Source/Systems/WeaponSystem.js";
-import { stepCombat } from "../Source/Systems/CombatSystem.js";
-import { stepPickups } from "../Source/Systems/PickupSystem.js";
-import { spawnEnemy } from "../Source/Systems/Spawner.js";
-import { difficulty } from "../Source/Content/Curve.js";
-import { ENEMIES } from "../Source/Content/Enemies.js";
-import { CHARACTERS, STARTER_ID } from "../Source/Content/Characters.js";
+} from "../Shared/Systems/Movement.js";
+import { stepWeapons } from "../Shared/Systems/WeaponSystem.js";
+import { stepCombat } from "../Shared/Systems/CombatSystem.js";
+import { stepPickups } from "../Shared/Systems/PickupSystem.js";
+import { spawnEnemy } from "../Shared/Systems/Spawner.js";
+import { difficulty } from "../Shared/Content/Curve.js";
+import { ENEMIES } from "../Shared/Content/Enemies.js";
+import { CHARACTERS, STARTER_ID } from "../Shared/Content/Characters.js";
 
 const DT = 1 / 60;
 
@@ -149,7 +149,7 @@ describe("Co-op allies", () => {
 describe("Co-op ally upgrades", () => {
   it("allyLevelChoices deals 3 weapon-centric cards; picks apply", async () => {
     const { allyLevelChoices, applyAllyChoice } =
-      await import("../Source/Systems/Leveling.js");
+      await import("../Shared/Systems/Leveling.js");
     const s = makeState();
     const a = ally(s, "mage");
     const hand = allyLevelChoices(s, a);

@@ -1,62 +1,152 @@
 <!doctype html>
-<html lang="en" class="wa-theme-default wa-palette-default es-theme">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0e0b14" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <meta name="apple-mobile-web-app-title" content="EmojiSurvivors" />
-    <title>EmojiSurvivors</title>
+    <title>EmojiSurvivors — Pick Your Dimension</title>
     <link
       rel="icon"
       type="image/png"
       sizes="192x192"
-      href="./Source/Assets/Icon192.png"
+      href="./Shared/Assets/Icon192.png"
     />
-    <link rel="apple-touch-icon" href="./Source/Assets/Icon192.png" />
-    <link rel="manifest" href="./Manifest.webmanifest" />
-    <!-- Web Awesome v3.7.0 (vendored, buildless) -->
-    <link
-      rel="stylesheet"
-      href="./Source/Vendor/WebAwesome/styles/webawesome.css"
-    />
-    <script
-      type="module"
-      src="./Source/Vendor/WebAwesome/webawesome.loader.js"
-      data-webawesome="./Source/Vendor/WebAwesome/"
-    ></script>
-    <!-- Font Awesome Pro Duotone (vendored webfonts) -->
-    <link
-      rel="stylesheet"
-      href="./Source/Vendor/FontAwesome/css/fontawesome.css"
-    />
-    <link rel="stylesheet" href="./Source/Vendor/FontAwesome/css/duotone.css" />
-    <!-- Palette first, then theme overrides consume it -->
-    <link rel="stylesheet" href="./Source/Styles/Theme.css" />
-    <link rel="stylesheet" href="./Source/Styles/Reset.css" />
-    <link rel="stylesheet" href="./Source/Styles/WaTheme.css" />
-    <link rel="stylesheet" href="./Source/Styles/Canvas.css" />
-    <link rel="stylesheet" href="./Source/Styles/Layout.css" />
-    <link rel="stylesheet" href="./Source/Styles/Hud.css" />
+    <style>
+      :root {
+        --bg: #0e0b14;
+        --panel: #181226;
+        --line: #2c2240;
+        --bone: #ece9e0;
+        --muted: #9a8fb0;
+        --arcane: #9b6cff;
+        --gold: #e8c14a;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        padding: 1.5rem;
+        background: radial-gradient(
+          120% 120% at 50% 0%,
+          #1c1430,
+          var(--bg) 70%
+        );
+        color: var(--bone);
+        font-family: system-ui, sans-serif;
+        text-align: center;
+      }
+      h1 {
+        font-size: clamp(1.8rem, 7vw, 3.2rem);
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        text-shadow:
+          0 0 18px rgba(155, 108, 255, 0.6),
+          0 3px 0 #000;
+      }
+      .sub {
+        color: var(--muted);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+      }
+      .picks {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      a.pick {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        width: min(280px, 80vw);
+        padding: 2rem 1.5rem;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: linear-gradient(180deg, #1f1733, var(--panel));
+        color: var(--bone);
+        text-decoration: none;
+        transition:
+          transform 0.1s ease,
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      a.pick:hover,
+      a.pick:focus-visible {
+        transform: translateY(-4px);
+        border-color: var(--arcane);
+        box-shadow: 0 12px 36px rgba(155, 108, 255, 0.3);
+      }
+      .pick .em {
+        font-size: 3.4rem;
+        line-height: 1;
+      }
+      .pick .name {
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+      .pick .desc {
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+      .pick .tag {
+        color: var(--gold);
+        font-size: 0.75rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+      footer {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+    </style>
   </head>
   <body>
-    <h1 class="sr-only">EmojiSurvivors</h1>
-    <canvas
-      id="Game"
-      role="img"
-      aria-label="EmojiSurvivors game field"
-    ></canvas>
-    <div id="Hud" class="hud" hidden></div>
-    <div id="CoopToast" class="coop-toast" hidden></div>
-    <div id="Overlay" class="overlay-layer"></div>
-    <div id="Live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-    <script type="module" src="./Source/Main.js"></script>
+    <div>
+      <h1>💀 EmojiSurvivors</h1>
+      <div class="sub">survive the swarm — pick your dimension</div>
+    </div>
+    <div class="picks">
+      <a class="pick" href="./2d/">
+        <span class="em">🗺️</span>
+        <span class="name">2D Classic</span>
+        <span class="tag">top-down bullet heaven</span>
+        <span class="desc"
+          >The original. Auto-fire, manual aim option, gamepad + 4-player
+          co-op.</span
+        >
+      </a>
+      <a class="pick" href="./3d/">
+        <span class="em">🔫</span>
+        <span class="name">3D FPS</span>
+        <span class="tag">first-person survivors</span>
+        <span class="desc"
+          >Same swarm, seen down the barrel. Mouse-look, trigger fire, gamepad +
+          4-player co-op.</span
+        >
+      </a>
+    </div>
+    <footer>
+      Saves are separate per version. Co-op rooms only match within the same
+      version.
+    </footer>
+    <script>
+      // This path used to host the 2D game — retire its old service worker (scoped
+      // exactly to /survivors/) so this picker is never shadowed by a cached app.
+      if ("serviceWorker" in navigator)
+        navigator.serviceWorker.getRegistrations().then((rs) => {
+          for (const r of rs)
+            if (new URL(r.scope).pathname === "/survivors/") r.unregister();
+        });
+    </script>
   </body>
 </html>

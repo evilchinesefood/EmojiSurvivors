@@ -1,12 +1,12 @@
 import { describe, it, expect } from "./Runner.js";
-import { createRunState } from "../Source/Engine/State.js";
+import { createRunState } from "../Shared/Engine/State.js";
 import {
   eligibleEvolutions,
   applyEvolution,
-} from "../Source/Systems/Evolutions.js";
-import { levelUpChoices } from "../Source/Systems/Leveling.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
-import { MAX_WEAPON_LEVEL } from "../Source/Content/Weapons.js";
+} from "../Shared/Systems/Evolutions.js";
+import { levelUpChoices } from "../Shared/Systems/Leveling.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
+import { MAX_WEAPON_LEVEL } from "../Shared/Content/Weapons.js";
 
 function run() {
   // Mage starts with Magic Bolt → Bolt Storm via Spell Focus.

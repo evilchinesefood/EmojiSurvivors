@@ -1,9 +1,9 @@
 // Tuning harness (not part of npm test). Reuses SimProbe's canonical kiting +
 // priority-pick policy to sweep every character over a run and print a balance table.
 // Usage: node Tests/BalanceProbe.mjs [runLength]
-import { createRunState } from "../Source/Engine/State.js";
-import { stepSim, STEP } from "../Source/Engine/GameLoop.js";
-import { CHARACTERS, CHARACTER_IDS } from "../Source/Content/Characters.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { stepSim, STEP } from "../Shared/Engine/GameLoop.js";
+import { CHARACTERS, CHARACTER_IDS } from "../Shared/Content/Characters.js";
 import { moveAI, smartPick } from "./SimProbe.mjs";
 
 function playRun(characterId, runLength, seed = 1234) {

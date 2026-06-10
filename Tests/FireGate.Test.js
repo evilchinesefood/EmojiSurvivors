@@ -1,10 +1,10 @@
 // FPS trigger gating: weapons hold ready while input.fire is false, fire when
 // pressed, and default to auto-fire (back-compat for headless sims + probes).
 import { describe, it, expect } from "./Runner.js";
-import { createRunState } from "../Source/Engine/State.js";
-import { stepWeapons } from "../Source/Systems/WeaponSystem.js";
-import { WEAPONS } from "../Source/Content/Weapons.js";
-import { CHARACTERS, STARTER_ID } from "../Source/Content/Characters.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { stepWeapons } from "../Shared/Systems/WeaponSystem.js";
+import { WEAPONS } from "../Shared/Content/Weapons.js";
+import { CHARACTERS, STARTER_ID } from "../Shared/Content/Characters.js";
 
 const aimedId = Object.keys(WEAPONS).find(
   (k) => WEAPONS[k].behavior === "aimed" && !WEAPONS[k].evolved,

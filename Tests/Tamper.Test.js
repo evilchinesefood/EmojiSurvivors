@@ -1,9 +1,9 @@
 import { describe, it, expect } from "./Runner.js";
-import { SAVE_KEY, SIG_KEY, signature } from "../Source/Meta/Save.js";
-import { makeMeta } from "../Source/Meta/Meta.js";
-import { CHARACTERS } from "../Source/Content/Characters.js";
-import { createRunState } from "../Source/Engine/State.js";
-import { damageMul } from "../Source/Systems/WeaponSystem.js";
+import { SAVE_KEY, SIG_KEY, signature } from "../Shared/Meta/Save.js";
+import { makeMeta } from "../Shared/Meta/Meta.js";
+import { CHARACTERS } from "../Shared/Content/Characters.js";
+import { createRunState } from "../Shared/Engine/State.js";
+import { damageMul } from "../Shared/Systems/WeaponSystem.js";
 
 function mem(seed) {
   const store = seed ? { ...seed } : {};

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "./Runner.js";
-import { makeMeta } from "../Source/Meta/Meta.js";
-import { POWER_GRID } from "../Source/Content/PowerGrid.js";
+import { makeMeta } from "../Shared/Meta/Meta.js";
+import { POWER_GRID } from "../Shared/Content/PowerGrid.js";
 
 function mem() {
   const store = {};

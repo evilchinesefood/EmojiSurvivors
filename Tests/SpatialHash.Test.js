@@ -1,5 +1,5 @@
 import { describe, it, expect } from "./Runner.js";
-import { makeSpatialHash } from "../Source/World/SpatialHash.js";
+import { makeSpatialHash } from "../Shared/World/SpatialHash.js";
 
 describe("SpatialHash", () => {
   it("returns items inside the query circle bbox", () => {

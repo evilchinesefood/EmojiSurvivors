@@ -1,6 +1,6 @@
 // Same-origin signaling client (Api/Signal.php): room create/join + a polled
 // message mailbox, used only for the WebRTC handshake while a lobby is open.
-const API = "Api/Signal.php";
+const API = "/survivors/Api/Signal.php"; // shared across versions (rooms are version-gated)
 
 async function post(body) {
   const r = await fetch(API, {
