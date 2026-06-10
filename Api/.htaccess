@@ -1,4 +1,0 @@
-# The leaderboard data store is server state — never serve it raw.
-<Files "LeaderboardData.json">
-  Require all denied
-</Files>
