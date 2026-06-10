@@ -2,6 +2,12 @@
 // forward and never crash — load always returns a complete, valid save. Storage is a
 // {getItem,setItem} seam so it's node-testable with an in-memory stub.
 //
+// SHARED SAVE: the 2D and 3D versions live on the same origin and share this key —
+// coins, power grid, character unlocks, best times, and local records carry across.
+// Settings hold the union of both versions' keys (each UI only surfaces its own).
+// The 3D version briefly kept its own save under emojisurvivors3d-*; loadFrom folds
+// that into the shared save once, then deletes the legacy keys.
+//
 // Tamper detection: the save is stored with a sibling FNV-1a signature over the
 // exact serialized string. v3+ saves with a missing/wrong signature load TAINTED —
 // the game keeps working, but Clown Mode has opinions. Pre-signing saves (v<=2) get
@@ -12,6 +18,8 @@ import { CHARACTERS } from "../Content/Characters.js";
 
 export const SAVE_KEY = "emojisurvivors-save";
 export const SIG_KEY = "emojisurvivors-save-sig";
+const LEGACY3D_KEY = "emojisurvivors3d-save";
+const LEGACY3D_SIG = "emojisurvivors3d-save-sig";
 export const SAVE_VERSION = 3;
 const SALT = "the-game-knows-what-you-did";
 
@@ -41,7 +49,14 @@ export function defaultSave() {
     records: [], // local leaderboard entries (see Records.js)
     playerName: "", // leaderboard handle
     tainted: false, // tamper flag — sticky once set
-    settings: { sfx: 0.6, shake: true, damageNumbers: true, manualAim: false },
+    settings: {
+      sfx: 0.6,
+      shake: true,
+      damageNumbers: true,
+      manualAim: false, // 2D
+      sensitivity: 1, // 3D
+      autoFire: false, // 3D
+    },
   };
 }
 
@@ -119,22 +134,78 @@ export function migrate(raw) {
   };
 }
 
+// Fold two migrated saves into one (used once, for the legacy 3D split-save):
+// additive counters, best-of records/times/grid, union unlocks, sticky taint.
+export function mergeSaves(a, b) {
+  const grid = { ...a.powerGrid };
+  for (const k in b.powerGrid) grid[k] = Math.max(grid[k] || 0, b.powerGrid[k]);
+  const times = { ...a.bestTimes };
+  for (const k in b.bestTimes)
+    times[k] = Math.max(times[k] || 0, b.bestTimes[k]);
+  return {
+    ...a,
+    coins: a.coins + b.coins,
+    powerGrid: grid,
+    bestTimes: times,
+    plays: a.plays + b.plays,
+    wins: a.wins + b.wins,
+    bestScore: Math.max(a.bestScore, b.bestScore),
+    unlockedChars: [...new Set([...a.unlockedChars, ...b.unlockedChars])],
+    records: [...a.records, ...b.records].slice(0, 200),
+    playerName: a.playerName || b.playerName,
+    tainted: a.tainted || b.tainted,
+    // a (the shared/2D save) wins shared keys, but the 3D-flavored settings
+    // follow b (the legacy 3D save) — migrate() fills defaults into both, so a
+    // plain spread would clobber the player's real 3D values with defaults.
+    settings: {
+      ...b.settings,
+      ...a.settings,
+      sensitivity: b.settings.sensitivity,
+      autoFire: b.settings.autoFire,
+    },
+  };
+}
+
+// Verify a raw stored string's sibling signature (v3+ saves only).
+function verified(storage, raw, sigKey) {
+  try {
+    const j = JSON.parse(raw);
+    const v =
+      j && typeof j === "object" && Number.isFinite(+j.version)
+        ? +j.version
+        : 0;
+    return v < 3 || storage.getItem(sigKey) === signature(raw);
+  } catch {
+    return false;
+  }
+}
+
 export function loadFrom(storage) {
+  let out;
   try {
     const s = storage && storage.getItem(SAVE_KEY);
-    if (!s) return defaultSave();
-    const raw = JSON.parse(s);
-    const out = migrate(raw);
-    // Verify on the raw string BEFORE migrate's silent clamping can mask an edit.
-    const v =
-      raw && typeof raw === "object" && Number.isFinite(+raw.version)
-        ? +raw.version
-        : 0;
-    if (v >= 3 && storage.getItem(SIG_KEY) !== signature(s)) out.tainted = true;
-    return out;
+    if (s) {
+      out = migrate(JSON.parse(s));
+      if (!verified(storage, s, SIG_KEY)) out.tainted = true;
+    } else out = defaultSave();
   } catch {
-    return defaultSave();
+    out = defaultSave();
   }
+  // One-time fold of the short-lived separate 3D save into the shared one.
+  try {
+    const leg = storage && storage.getItem(LEGACY3D_KEY);
+    if (leg) {
+      const l = migrate(JSON.parse(leg));
+      if (!verified(storage, leg, LEGACY3D_SIG)) l.tainted = true;
+      out = storage.getItem(SAVE_KEY) ? mergeSaves(out, l) : l;
+      saveTo(storage, out);
+      storage.removeItem?.(LEGACY3D_KEY);
+      storage.removeItem?.(LEGACY3D_SIG);
+    }
+  } catch {
+    /* corrupt legacy blob — the shared save stands */
+  }
+  return out;
 }
 
 export function saveTo(storage, data) {

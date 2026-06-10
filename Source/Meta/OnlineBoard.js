@@ -1,7 +1,8 @@
 // Online leaderboard client. Same-origin PHP endpoint (Api/Leaderboard.php);
 // everything is best-effort — offline / file:// dev simply no-ops. Tainted saves
 // never post: the circus stays local.
-const API = "Api/Leaderboard.php";
+// Shared across the 2D + 3D versions — one global board set at the picker path.
+const API = "/survivors/Api/Leaderboard.php";
 // Rotated 2026-06-10. NOTE: this salt necessarily ships in the client (the browser
 // must produce a matching signature), so it is a forgery speed-bump, not a secret —
 // the real guards live server-side (sanity caps + per-IP rate limit). Must stay
