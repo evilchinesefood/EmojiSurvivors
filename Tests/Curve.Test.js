@@ -28,8 +28,8 @@ describe("Curve", () => {
 
   it("spawn interval + cap respect their clamps", () => {
     const late = difficulty(100000);
-    expect(late.spawnInterval).toBeCloseTo(0.2, 1e-6);
-    expect(late.cap).toBe(235);
-    expect(late.waveInterval >= 15 - 1e-9).toBeTruthy();
+    expect(late.spawnInterval).toBeCloseTo(0.15, 1e-6);
+    expect(late.cap).toBe(280);
+    expect(late.waveInterval >= 13 - 1e-9).toBeTruthy();
   });
 });

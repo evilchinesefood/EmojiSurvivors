@@ -11,6 +11,7 @@ import { makeFx } from "./Render/Fx.js";
 import { makeInput } from "./Input/Input.js";
 import { makeHud } from "./UI/Hud.js";
 import { makeShell } from "./UI/Shell.js";
+import { mount } from "./UI/Dom.js";
 import { MenuScreen } from "./UI/MenuScreen.js";
 import { SelectScreen } from "./UI/SelectScreen.js";
 import { RecordsScreen } from "./UI/RecordsScreen.js";
@@ -43,7 +44,21 @@ function estimateDps(s) {
   return Math.round(dps);
 }
 
+// A new SW (skipWaiting + clients.claim) takes control mid-session after a deploy. The
+// page still holds the OLD modules in memory → reload once to pick up the fresh,
+// consistent bundle (prevents stale-overlay / mixed-version bugs). But NEVER nuke an
+// active run: reload only when idle (no run), else defer until the run ends.
+let pendingReload = false;
+function reloadForUpdate() {
+  if (pendingReload) location.reload();
+}
 if ("serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || pendingReload) return; // skip first-ever control; once only
+    pendingReload = true;
+    if (!state) reloadForUpdate(); // idle → reload now; mid-run → quitToMenu() handles it
+  });
   addEventListener("load", () =>
     navigator.serviceWorker.register("./ServiceWorker.js").catch(() => {}),
   );
@@ -346,6 +361,7 @@ function quitToMenu() {
   state = null;
   loop.setTimescale(1);
   machine.set(S.MENU);
+  reloadForUpdate(); // apply a deferred post-deploy update now that no run is active
 }
 
 function endRun() {
@@ -394,8 +410,29 @@ function levelUpHand() {
 function pickChoice(c) {
   applyChoice(state, c);
   state.currentChoices = null; // the next queued level-up draws a fresh hand
+  // A locked filler now auto-resolves any remaining dead-pool level-ups silently.
+  if (state.awaitingLevelUp && state.autoFiller) drainLockedFillers();
   if (state.awaitingLevelUp) shell.render();
   else machine.set(S.PLAYING);
+}
+
+const isAllFiller = (hand) =>
+  hand.every((c) => c.kind === "heal" || c.kind === "coins");
+
+// Once the player locks a filler (Feast/Coin Cache), every later level-up whose hand
+// is nothing but fillers auto-applies it — no repeated identical prompt. Stops (and
+// caches the hand) the moment a real upgrade reappears, so the screen still shows then.
+function drainLockedFillers() {
+  let guard = 0;
+  while (state.awaitingLevelUp) {
+    const hand = levelUpChoices(state);
+    if (!isAllFiller(hand)) {
+      state.currentChoices = hand;
+      return;
+    }
+    applyChoice(state, { kind: state.autoFiller });
+    if (++guard > 5000) return;
+  }
 }
 
 // Randomizer modifier: resolve EVERY queued pick with a random offered card, no UI.
@@ -468,6 +505,10 @@ const screens = {
       rerollsLeft: state.rerollsLeft,
       banishesLeft: state.banishesLeft,
       onPick: pickChoice,
+      onLock: (c) => {
+        state.autoFiller = c.kind; // lock this filler, then take it now
+        pickChoice(c);
+      },
       onReroll: () => {
         if (state.rerollsLeft > 0) {
           state.rerollsLeft -= 1;
@@ -551,7 +592,10 @@ const loop = createLoop(
       if (state.outcome) endRun();
       else if (state.awaitingLevelUp) {
         if (state.modifiers.randomizer) autoPickLevelUps();
-        else machine.set(S.LEVELUP);
+        else {
+          if (state.autoFiller) drainLockedFillers();
+          if (state.awaitingLevelUp) machine.set(S.LEVELUP);
+        }
       }
     }
     // Decay shake every frame (even paused/overlay) so frozen frames settle.
@@ -559,6 +603,10 @@ const loop = createLoop(
   },
   () => {
     if (state) {
+      // Safety net: a live run must never sit under a leftover overlay (results,
+      // level-up, etc.). Overlays belong to LEVELUP/PAUSED/result states; during
+      // PLAYING the overlay should always be empty.
+      if (machine.is(S.PLAYING) && overlay.firstChild) mount(overlay, null);
       camera.follow(state.player.x, state.player.y);
       const sh = fx.offset();
       renderer.render(state, camera, sh);

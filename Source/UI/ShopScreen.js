@@ -15,14 +15,21 @@ export function ShopScreen(ctx) {
     const row = POWER_GRID[stat];
     const lvl = meta.gridLevel(stat);
     const cost = meta.gridCost(stat);
-    const maxed = lvl >= row.max;
-    const pips = h(
-      "div",
-      { class: "gr-pips" },
-      Array.from({ length: row.max }, (_, i) =>
-        h("div", { class: "gr-pip" + (i < lvl ? " on" : "") }),
-      ),
-    );
+    const maxed = !row.infinite && lvl >= row.max;
+    // Infinite rows show a level counter (rendering 9999 pips would be absurd).
+    const pips = row.infinite
+      ? h(
+          "div",
+          { class: "gr-pips" },
+          h("span", { class: "pick-tag" }, "Lv " + lvl),
+        )
+      : h(
+          "div",
+          { class: "gr-pips" },
+          Array.from({ length: row.max }, (_, i) =>
+            h("div", { class: "gr-pip" + (i < lvl ? " on" : "") }),
+          ),
+        );
     let buy;
     if (maxed) {
       buy = h("span", { class: "pick-tag good" }, "MAX");

@@ -6,7 +6,7 @@ import { CHARACTERS } from "../Content/Characters.js";
 import { topFor } from "../Meta/Records.js";
 import { fetchBoard } from "../Meta/OnlineBoard.js";
 
-const LABELS = { 300: "5 min", 600: "10 min", 900: "15 min" };
+const LABELS = { 300: "5 min", 600: "10 min", 900: "15 min", 1800: "30 min" };
 
 function mmss(sec) {
   const s = Math.max(0, Math.floor(sec));

@@ -32,7 +32,7 @@ export function defaultSave() {
     version: SAVE_VERSION,
     coins: 0,
     powerGrid: {},
-    bestTimes: { 300: 0, 600: 0, 900: 0 },
+    bestTimes: { 300: 0, 600: 0, 900: 0, 1800: 0 },
     plays: 0, // runs started — gates some modifier unlocks
     wins: 0, // boss kills — gates the rest
     bestScore: 0, // best Endless score (kills + seconds)
@@ -61,7 +61,7 @@ export function migrate(raw) {
       }
     return out;
   };
-  // Only the three real run lengths, each coerced to a non-negative integer.
+  // Only the four real run lengths (300/600/900/1800), each a non-negative integer.
   const cleanTimes = (b) => {
     const out = { ...d.bestTimes };
     if (b && typeof b === "object") for (const k in out) out[k] = num(b[k]);

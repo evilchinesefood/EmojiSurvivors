@@ -106,6 +106,7 @@ export function createRunState({
     rerollsLeft: stats.rerolls,
     banishesLeft: 1 + stats.banishes, // remove offered cards from this run's pool
     banishedCards: new Set(), // card ids banished for the rest of the run
+    autoFiller: null, // "heal"|"coins": locked filler auto-applied when the pool is dead
     entitySeq: 0, // monotonic id for pooled enemies (projectile hit-tracking)
     outcome: null, // 'victory' | 'gameover'
     spawn: {

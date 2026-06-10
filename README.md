@@ -11,17 +11,26 @@ at the deadline. Coins persist between runs to power up your account.
 
 ## Features
 
-- **6 characters**, each with a starting weapon, a stat tilt, and a unique gimmick
-  (glass-cannon double-fire, missing-HP rage, regen, greed, armor, bone-pact).
-- **6 weapons + 6 evolutions** — aimed bolts, dagger spreads, a whip cone, a thorn aura,
-  lobbed axes, orbiting orbs — each evolves at max level when paired with its passive.
-- **7 passives** and a **12-row account-wide power grid** (permanent, coin-bought).
-- **6 enemy tiers** that unlock as the run heats up, **elites** that drop chests, and a
-  **boss per run length** (5 / 10 / 15 min). Kill it to win.
-- 1-of-3 (luck → 4) **level-up draws**, XP gems, magnet, chests, revives, rerolls.
-- **WebAudio SFX** synthesized at runtime (zero audio files), particles, screen shake,
-  a moody graveyard backdrop (drifting fog, scattered tombstones, vignette).
-- Installable **PWA**, fully offline after first load.
+- **10 characters** — six free (knight, mage, rogue, druid, barbarian, necromancer) and
+  four coin-unlocked (witch, ninja, pumpkin king, reaper). Each has a starting weapon, a
+  stat tilt, and a unique gimmick: glass-cannon double-fire, missing-HP rage, regen,
+  greed, armor, life-on-hit, 4-card draws, dodge, attacker-reflect, low-HP execute.
+- **11 weapons + their evolutions** — aimed bolts, dagger spreads, a whip cone, a thorn
+  aura, lobbed axes, orbiting orbs, throwing stars, a moon scythe, a pumpkin bomb, bone
+  spears — each evolves at max level when paired with its partner passive.
+- **10 passives** and a **17-row account-wide power grid** (permanent, coin-bought),
+  including an **infinite Ascension** row so coins always have a use.
+- **Enemy tiers** that unlock as the run heats up, **elites** that drop chests, and a
+  **boss per run length** — **5 / 10 / 15 / 30 min**. Kill it to win.
+- **Leaderboards** — local records plus an opt-in online global board, split by length,
+  standard/endless, and normal/hard.
+- **Modifiers** including **Hard Mode** (roughly triple the threat — standing still is
+  fatal), Endless, and a stack of run mutators, unlocked by playing and winning.
+- **Hidden easter eggs** — disco wisps, a fast-talking Karen, mimic chests, a graveyard
+  cat, a Konami secret, seasonal surprises, and more. Edit your save and… find out.
+- 1-of-3 (luck → 4) **level-up draws** with banish + reroll, XP gems, magnet, chests,
+  revives. **WebAudio SFX** synthesized at runtime (zero audio files), particles, screen
+  shake, and a drifting graveyard backdrop. Installable **PWA**, fully offline.
 
 ## Controls
 
@@ -36,23 +45,6 @@ per-frame `requestAnimationFrame` canvas renderer — so balance is frame-rate i
 and the whole game is headless-testable under Node. Menu/HUD chrome is
 [Web Awesome](https://webawesome.com) + Font Awesome (vendored), emojis are the canvas
 sprites.
-
-## Develop
-
-```bash
-# serve locally (any static server works)
-python3 -m http.server 8138 --directory .
-# → http://localhost:8138/Index.html
-
-# run the test suite (zero-dependency, Node only)
-npm test            # Tests/RunAll.js (unit) + Tests/SimProbe.mjs (seeded full-run probe)
-
-node Tests/BalanceProbe.mjs 900   # optional: per-character balance sweep at a run length
-```
-
-`SimProbe.mjs` drives the headless sim at a fixed seed and asserts the real invariants:
-no NaN, bounded entity counts, the player levels up, the boss spawns at the deadline, a
-focused build evolves, and a run reaches **victory** at 5- and 15-minute lengths.
 
 ## Project layout
 

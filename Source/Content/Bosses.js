@@ -32,6 +32,16 @@ export const BOSSES = {
     dmg: 40,
     coinReward: 220,
   },
+  1800: {
+    id: "voidmaw",
+    name: "Voidmaw, the Eternal Hunger",
+    emoji: "🕳️",
+    size: 150,
+    hp: 42000,
+    speed: 46,
+    dmg: 56,
+    coinReward: 500,
+  },
 };
 
 export function bossFor(runLength) {

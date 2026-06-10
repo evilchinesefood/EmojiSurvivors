@@ -243,16 +243,17 @@ export function resolveModifiers(sel = {}) {
     c.active.push(id);
   };
   if (sel.hard) {
-    // ~3x normal effective pressure (was ~2.3x): hp·dmg·spawn ≈ 4.9 raw, offset by
-    // the richer xp/coin scaling. Bosses get real teeth too (dmg was unscaled).
-    c.enemyHpMul *= 1.7;
-    c.enemySpeedMul *= 1.3;
-    c.enemyDmgMul *= 1.6;
-    c.spawnMul *= 1.8;
+    // Stacks on the (already ~2x) base curve. Standing still is fatal; a maxed account
+    // playing actively can still win. Damage is the dominant lever (i-frame design),
+    // so dmg/bossDmg get the biggest bumps. Rewards stay rich to pay for the pain.
+    c.enemyHpMul *= 3.6;
+    c.enemySpeedMul *= 2.3;
+    c.enemyDmgMul *= 4.8;
+    c.spawnMul *= 3.6;
     c.xpMul *= 1.6;
     c.coinMul *= 1.75;
-    c.bossHpMul *= 2.2;
-    c.bossDmgMul *= 1.5;
+    c.bossHpMul *= 3.0;
+    c.bossDmgMul *= 2.2;
     on("hard");
   }
   if (sel.endless) {

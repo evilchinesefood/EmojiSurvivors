@@ -60,7 +60,9 @@ export function resolve(tilt = [], ownedPassives = {}, powerGrid = {}) {
     if (row) for (let i = 0; i < lvl; i++) apply(acc, row.mods);
   }
   return {
-    might: acc.might,
+    // Ceiling guards the infinite Ascension row (and tampered saves) from overflowing
+    // might to Infinity → NaN damage. No legit build approaches it.
+    might: Math.max(0, Math.min(acc.might, 1e6)),
     area: acc.area,
     cooldown: Math.max(0.2, acc.cooldown),
     projSpeed: Math.max(0.2, acc.projSpeed),

@@ -20,3 +20,8 @@ node_modules/
 # Local agent instructions + planning docs (never deploy/publish)
 CLAUDE.md
 docs/
+fixes.md
+
+# Online leaderboard backend — deployed via rsync, never tracked on GitHub.
+# (Holds the server-side signing salt + JSON data store; keep it off the public repo.)
+Api/

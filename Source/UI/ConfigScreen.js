@@ -11,11 +11,12 @@ import {
   unlockLabel,
 } from "../Content/Modifiers.js";
 
-const LABELS = { 300: "5 min", 600: "10 min", 900: "15 min" };
+const LABELS = { 300: "5 min", 600: "10 min", 900: "15 min", 1800: "30 min" };
 const SUBS = {
   300: "Quick raid",
   600: "Standard night",
   900: "The long dark",
+  1800: "Endurance",
 };
 
 // One modifier row: a control if unlocked, a lock + requirement if not.

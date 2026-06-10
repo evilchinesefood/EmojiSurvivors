@@ -150,6 +150,18 @@ export const POWER_GRID = {
     cost: geo(400, 2.2),
     mods: [{ stat: "weaponStartLevel", op: "add", value: 1 }],
   },
+  // Endless coin sink: never maxes, cost compounds out of reach long before the
+  // bound. `infinite` tells the shop to show a level counter, not 9999 pips.
+  ascension: {
+    id: "ascension",
+    name: "Ascension",
+    emoji: "♾️",
+    desc: "+1.5% damage / level — forever",
+    max: 9999,
+    infinite: true,
+    cost: geo(800, 1.3),
+    mods: [{ stat: "might", op: "mul", value: 1.015 }],
+  },
 };
 
 export const POWER_GRID_IDS = Object.keys(POWER_GRID);

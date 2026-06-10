@@ -12,6 +12,11 @@ const TAGS = {
 };
 
 export function LevelUpScreen(ctx) {
+  // When every card is a filler (the real pool is exhausted), offer to LOCK one so it
+  // auto-applies every level-up from now on instead of re-prompting the same hand.
+  const allFiller = ctx.choices.every(
+    (c) => c.kind === "heal" || c.kind === "coins",
+  );
   const cards = ctx.choices.map((c) => {
     const card = h(
       "div",
@@ -29,6 +34,24 @@ export function LevelUpScreen(ctx) {
         go();
       }
     });
+    // Dead pool: a "lock & auto" button picks this filler AND auto-applies it for the
+    // rest of the run (no more identical prompts).
+    if (allFiller && (c.kind === "heal" || c.kind === "coins")) {
+      const lock = h(
+        "button",
+        {
+          class: "pick-lock",
+          type: "button",
+          "aria-label": "Auto-pick this for the rest of the run",
+        },
+        icon("lock", { noTone: true }),
+      );
+      lock.addEventListener("click", (e) => {
+        e.stopPropagation();
+        ctx.onLock(c);
+      });
+      card.appendChild(lock);
+    }
     // Banish removes this card's id from the run pool (free, 1/run, not a reroll).
     if (ctx.banishesLeft > 0 && c.id) {
       const ban = h(
@@ -59,6 +82,16 @@ export function LevelUpScreen(ctx) {
   ];
   if (ctx.count > 1)
     kids.push(h("div", { class: "subtitle" }, ctx.count + " level-ups queued"));
+  if (allFiller)
+    kids.push(
+      h(
+        "div",
+        { class: "subtitle" },
+        "Nothing left to upgrade — ",
+        icon("lock", { noTone: true }),
+        " lock one to auto-collect it.",
+      ),
+    );
   kids.push(h("div", { class: "choice-grid" }, cards));
 
   const actions = [];

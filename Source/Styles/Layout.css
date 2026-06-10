@@ -120,6 +120,25 @@
   opacity: 1;
   border-color: var(--bad);
 }
+.pick-lock {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 14, 30, 0.7);
+  border: 1px solid var(--line);
+  color: var(--gold);
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+.pick-lock:hover {
+  opacity: 1;
+  border-color: var(--gold);
+}
 .pick-card[aria-disabled="true"] {
   opacity: 0.55;
   cursor: not-allowed;
@@ -168,6 +187,8 @@
 }
 .seg {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 0.5rem;
 }
 .mod-panel {

@@ -143,6 +143,7 @@ export function drive({
   powerGrid = {},
   modifiers = {},
   tainted = false,
+  still = false,
 }) {
   const s = createRunState({
     seed,
@@ -158,7 +159,7 @@ export function drive({
   let maxGems = 0;
   let evolves = 0;
   for (let i = 0; i < steps; i++) {
-    s.input.move = moveAI(s);
+    s.input.move = still ? { x: 0, y: 0 } : moveAI(s);
     stepSim(s, STEP);
     let guard = 0;
     while (s.awaitingLevelUp) {
@@ -324,6 +325,37 @@ function main() {
   ok(
     hv.s.outcome === "victory",
     "maxed mage should win 5-min HARD (got " + hv.s.outcome + ")",
+  );
+
+  // Standing still must be FATAL in Hard, even for a fully-maxed tanky build. The
+  // barbarian (highest survivability) standing still in Hard should die before the boss.
+  const afk = drive({
+    seed: 1234,
+    runLength: 300,
+    characterId: "barbarian",
+    seconds: 320,
+    powerGrid: MAXED_GRID,
+    modifiers: { hard: true },
+    still: true,
+  });
+  ok(
+    afk.s.outcome === "gameover",
+    "standing still in HARD must lose, even maxed (got " +
+      (afk.s.outcome || "survived") +
+      ")",
+  );
+
+  // The 30-min length spawns its own boss and is winnable by an invested account.
+  const v30 = drive({
+    seed: 1234,
+    runLength: 1800,
+    characterId: "mage",
+    seconds: 1880,
+    powerGrid: MAXED_GRID,
+  });
+  ok(
+    v30.s.outcome === "victory",
+    "maxed mage should win the 30-min boss (got " + v30.s.outcome + ")",
   );
 
   // Tainted (Clown Mode) runs stay playable and finite — penalties, not bricks.

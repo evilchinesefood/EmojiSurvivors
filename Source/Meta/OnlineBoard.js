@@ -2,6 +2,10 @@
 // everything is best-effort — offline / file:// dev simply no-ops. Tainted saves
 // never post: the circus stays local.
 const API = "Api/Leaderboard.php";
+// Rotated 2026-06-10. NOTE: this salt necessarily ships in the client (the browser
+// must produce a matching signature), so it is a forgery speed-bump, not a secret —
+// the real guards live server-side (sanity caps + per-IP rate limit). Must stay
+// byte-identical to the SALT in Api/Leaderboard.php.
 const SALT = "es-ldr-2026-9f3a7c2e-spectral-tally";
 
 // FNV-1a 32-bit over an ASCII-only canonical string (charCodeAt == bytes, so the

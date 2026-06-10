@@ -18,8 +18,22 @@ export function makeInput({ canvas, isPlaying, onPause }) {
   let pointer = null; // {x, y} in CSS px, while down
   let hover = null; // {x, y} latest cursor pos (desktop), for manual aim
 
+  // True while the user is typing in a form control (e.g. the leaderboard-name
+  // field) — movement/pause keys must reach the field, not the game, and must NOT be
+  // preventDefault'd (that swallowed W/A/S/D/arrows in text inputs).
+  const typing = (e) => {
+    const t = e.target;
+    return (
+      t &&
+      (t.isContentEditable ||
+        t.tagName === "INPUT" ||
+        t.tagName === "TEXTAREA" ||
+        t.tagName === "SELECT")
+    );
+  };
+
   addEventListener("keydown", (e) => {
-    if (e.repeat) return;
+    if (e.repeat || typing(e)) return;
     if (e.code === "Escape" || e.code === "KeyP") {
       onPause?.();
       return;

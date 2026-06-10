@@ -8,6 +8,9 @@ import { resolveModifiers } from "../Source/Content/Modifiers.js";
 import { resolve } from "../Source/Systems/StatsModel.js";
 import { createRunState } from "../Source/Engine/State.js";
 import { levelUpChoices, applyChoice } from "../Source/Systems/Leveling.js";
+import { RUN_LENGTHS } from "../Source/Content/Curve.js";
+import { bossFor } from "../Source/Content/Bosses.js";
+import { makeMeta } from "../Source/Meta/Meta.js";
 
 describe("Expansion — roster + weapons", () => {
   it("10 characters, each with a valid starting weapon", () => {
@@ -62,20 +65,21 @@ describe("Expansion — power grid", () => {
     expect(s.banishesLeft).toBe(4);
   });
 
-  it("grid has 16 rows", () => {
-    expect(Object.keys(POWER_GRID).length).toBe(16);
+  it("grid has 17 rows incl. the infinite Ascension sink", () => {
+    expect(Object.keys(POWER_GRID).length).toBe(17);
+    expect(POWER_GRID.ascension.infinite).toBe(true);
   });
 });
 
 describe("Expansion — hard mode + gimmicks", () => {
-  it("hard folds the 3x retune", () => {
+  it("hard folds the standing-still-is-fatal retune", () => {
     const c = resolveModifiers({ hard: true });
-    expect(c.enemyHpMul).toBeCloseTo(1.7);
-    expect(c.enemyDmgMul).toBeCloseTo(1.6);
-    expect(c.enemySpeedMul).toBeCloseTo(1.3);
-    expect(c.spawnMul).toBeCloseTo(1.8);
-    expect(c.bossHpMul).toBeCloseTo(2.2);
-    expect(c.bossDmgMul).toBeCloseTo(1.5);
+    expect(c.enemyHpMul).toBeCloseTo(3.6);
+    expect(c.enemyDmgMul).toBeCloseTo(4.8);
+    expect(c.enemySpeedMul).toBeCloseTo(2.3);
+    expect(c.spawnMul).toBeCloseTo(3.6);
+    expect(c.bossHpMul).toBeCloseTo(3.0);
+    expect(c.bossDmgMul).toBeCloseTo(2.2);
     expect(c.xpMul).toBeCloseTo(1.6);
     expect(c.coinMul).toBeCloseTo(1.75);
   });
@@ -102,3 +106,53 @@ describe("Expansion — hard mode + gimmicks", () => {
     expect(!!ENEMIES.disco && !!ENEMIES.karen).toBe(true);
   });
 });
+
+describe("Expansion — 30-min length + infinite sink", () => {
+  it("1800 is a run length with its own boss", () => {
+    expect(RUN_LENGTHS.includes(1800)).toBe(true);
+    const b = bossFor(1800);
+    expect(b.id).toBe("voidmaw");
+    expect(b.hp > 12000).toBe(true);
+  });
+
+  it("Ascension never maxes, its cost compounds, and might grows then caps", () => {
+    const s = makeMeta(memStore());
+    s.bankRun(300, 1e9, 1); // fund it
+    let last = 0;
+    for (let i = 0; i < 6; i++) {
+      const cost = s.gridCost("ascension");
+      expect(cost > last || i === 0).toBe(true);
+      last = cost;
+      expect(s.buyGrid("ascension")).toBe(true); // buyable past any pip count
+    }
+    expect(s.gridLevel("ascension")).toBe(6);
+    const base = resolve([], {}, {}).might;
+    expect(resolve([], {}, { ascension: 10 }).might > base).toBe(true);
+    // Tampered/huge level must stay finite (no Infinity → NaN damage).
+    expect(Number.isFinite(resolve([], {}, { ascension: 9999 }).might)).toBe(
+      true,
+    );
+  });
+
+  it("applyChoice resolves a synthetic locked filler (heal/coins)", () => {
+    const s = createRunState({
+      seed: 1,
+      runLength: 300,
+      character: CHARACTERS.knight,
+    });
+    s.player.hp = 1;
+    applyChoice(s, { kind: "heal" });
+    expect(s.player.hp > 1).toBe(true);
+    const c0 = s.player.coins;
+    applyChoice(s, { kind: "coins" });
+    expect(s.player.coins > c0).toBe(true);
+  });
+});
+
+function memStore() {
+  const m = new Map();
+  return {
+    getItem: (k) => m.get(k) ?? null,
+    setItem: (k, v) => m.set(k, String(v)),
+  };
+}
