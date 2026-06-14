@@ -1,0 +1,9 @@
+# The JSON data stores are server state — never serve them raw. Only the .php
+# endpoints are meant to be reachable under Api/, so deny the data files plus any
+# backup/temp siblings a tool or crashed write could leave behind.
+<FilesMatch "\.(json|tmp|bak|save|orig|swp)$">
+  Require all denied
+</FilesMatch>
+
+# No directory listing of Api/.
+Options -Indexes

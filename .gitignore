@@ -22,6 +22,13 @@ CLAUDE.md
 docs/
 fixes.md
 
-# Online backends — deployed via rsync, never published. The whole Api/ folder
-# (PHP endpoints, .htaccess, and the live JSON stores) is kept off the repo.
-Api/
+# Online backends — the PHP endpoints + .htaccess ARE tracked. The real signing
+# salts (Api/Secret.php) and the live JSON data stores stay off the repo.
+Api/Secret.php
+Api/LeaderboardData.json
+Api/SignalData.json
+
+# Paid Fonticons assets — NOT redistributable, so they are not committed. Bring
+# your own (see README "Vendored assets"); they stay local for dev + rsync deploy.
+Shared/Vendor/FontAwesome/
+Shared/Vendor/WebAwesome/

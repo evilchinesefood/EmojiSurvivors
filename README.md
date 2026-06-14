@@ -51,8 +51,9 @@ Vanilla **ES modules, buildless** (no framework, no bundler, no build step). The
 simulation is a DOM-free, deterministic **fixed-timestep (60 Hz) engine** decoupled from a
 per-frame `requestAnimationFrame` canvas renderer — so balance is frame-rate independent
 and the whole game is headless-testable under Node. Menu/HUD chrome is
-[Web Awesome](https://webawesome.com) + Font Awesome (vendored), emojis are the canvas
-sprites.
+[Web Awesome](https://webawesome.com) + Font Awesome Pro, emojis are the canvas sprites.
+Those two are paid Fonticons assets and are **not included** in this repo — see
+**Vendored assets** below.
 
 ## Project layout
 
@@ -70,20 +71,33 @@ Shared/
   Meta/     versioned localStorage save · account state · local + online leaderboards
   Audio/    WebAudio SFX synth
   UI/       Web Awesome screens + HUD
-  Styles/   shared CSS · Vendor/ (Web Awesome + Font Awesome)
+  Styles/   shared CSS · Vendor/ (Web Awesome + Font Awesome — bring your own, not committed)
 2d/         Index · ServiceWorker · Source/{Main, Render (canvas), Input, Camera}
 3d/         Index · ServiceWorker · Source/{Main, Render (Three.js), Input (FPS), Camera, Vendor/Three}
 Tests/      zero-dep unit suite + seeded sim probe
 ```
 
-The PHP backends (online leaderboard + co-op signaling) live in `Api/` on the server and
-are **deployed separately via rsync — they are not part of this repository**.
+The PHP backends (online leaderboard + co-op signaling) live in `Api/` and deploy
+separately via rsync. The endpoint code is in the repo, but the signing salts
+(`Api/Secret.php` — copy `Api/Secret.example.php`) and the live JSON data stores are not.
 
 Adding content (a new weapon, enemy, character, power-grid row) is data-only — drop a def
 into `Shared/Content/*` and it bolts on without touching the systems.
 
+## Vendored assets
+
+This repo does **not** include Font Awesome Pro or Web Awesome — they are commercial
+[Fonticons](https://fontawesome.com) products that can't be redistributed. To run the UI,
+drop your own licensed copies into (both are gitignored):
+
+- `Shared/Vendor/FontAwesome/` — Font Awesome's `css/` + `webfonts/` (Pro or Free).
+- `Shared/Vendor/WebAwesome/` — a Web Awesome build.
+
+Three.js (3D build, `3d/Source/Vendor/Three/`) is MIT-licensed and **is** included.
+
 ## License
 
-Personal project. Web Awesome and Font Awesome are vendored under their own licenses.
+Personal project. Font Awesome Pro and Web Awesome are commercial Fonticons products and
+are **not** included here — supply your own under your own license (see Vendored assets).
 
 Built with [Claude Code](https://claude.com/claude-code).
