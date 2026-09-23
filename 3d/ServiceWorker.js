@@ -1,7 +1,7 @@
 // Caches are origin-scoped and SHARED with the 2D game's SW — only ever delete
 // caches under OUR prefix, or the two games wipe each other on every update.
 const CACHE_PREFIX = "emojisurvivors3d-";
-const CACHE = CACHE_PREFIX + "v11";
+const CACHE = CACHE_PREFIX + "v13-security";
 const SHELL_FIRST_PARTY = [
   "./",
   "./Index.html",
@@ -120,7 +120,7 @@ self.addEventListener("install", (e) => {
       .open(CACHE)
       .then((c) =>
         c
-          .addAll(SHELL_FIRST_PARTY)
+          .addAll(SHELL_FIRST_PARTY.map((path) => new Request(path, { cache: "reload" })))
           .then(() => Promise.allSettled(SHELL_VENDOR.map((u) => c.add(u)))),
       )
       .then(() => self.skipWaiting()),

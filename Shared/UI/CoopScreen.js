@@ -1,4 +1,4 @@
-// Co-op lobby: host opens a 4-letter room, up to 3 guests join by code; everyone
+// Co-op lobby: host opens a 6-letter room, up to 3 guests join by code; everyone
 // picks a character inline; the host picks the run length and starts. Re-rendered
 // whole by the shell whenever the lobby changes (coop.onLobby -> refresh).
 import { h } from "./Dom.js";
@@ -96,14 +96,14 @@ export function CoopScreen(ctx) {
     const code = h("input", {
       type: "text",
       class: "es-text coop-code",
-      maxlength: "4",
+      maxlength: "6",
       placeholder: "CODE",
       "aria-label": "Room code",
     });
     const join = h("wa-button", { appearance: "outlined", size: "l" }, "Join");
     join.addEventListener("click", async () => {
       const v = code.value.trim().toUpperCase();
-      if (v.length !== 4) return;
+      if (v.length !== 6) return;
       join.disabled = true; // a re-click mid-handshake kills the first attempt
       await coop.guestJoin(v, meta.playerName || "Guest", coop.myChar);
       ctx.refresh();

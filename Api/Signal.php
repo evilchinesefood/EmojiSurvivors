@@ -11,6 +11,7 @@
 ini_set("display_errors", "0");
 ini_set("log_errors", "1");
 error_reporting(E_ALL);
+umask(0077);
 
 header("Content-Type: application/json; charset=utf-8");
 header("Cache-Control: no-store");
@@ -19,6 +20,8 @@ const DATA = __DIR__ . "/SignalData.json";
 const ROOM_TTL = 1800; // 30 min
 const ROOM_MAX_LIFE = 7200; // hard ceiling regardless of keep-alive pings (2h)
 const MAX_ROOMS = 40;
+const MAX_PEERS = 32; // bounded reconnect identities per room
+const MAX_JOIN_IPS = 5000;
 const MAX_MSGS = 400; // per room (trickle ICE is chatty)
 const MAX_BODY = 65536; // SDP blobs run ~5-10KB
 const MAX_P = 24576; // per-message payload cap (SDP/ICE ~5-10KB; headroom)
@@ -66,9 +69,12 @@ function prune(&$data)
     foreach ($data["rooms"] as $code => $r) {
         $idle = $now - ($r["t"] ?? 0) > ROOM_TTL;
         $old = $now - ($r["c"] ?? ($r["t"] ?? 0)) > ROOM_MAX_LIFE;
-        if ($idle || $old) {
+        if ($idle || $old || !isset($r["peers"])) {
             unset($data["rooms"][$code]);
         }
+    }
+    foreach ($data["joins"] ?? [] as $k => $entry) {
+        if ($now - $entry["t"] > 60) unset($data["joins"][$k]);
     }
     foreach ($data["ips"] ?? [] as $k => $t) {
         if ($now - $t > IP_TTL) {
@@ -95,7 +101,10 @@ function withStore($write, $fn)
         fclose($fp);
         out(["ok" => false, "error" => "busy"], 503);
     }
-    $data = defaults(json_decode((string) stream_get_contents($fp), true));
+    $before = (string) stream_get_contents($fp);
+    $decoded = json_decode($before, true);
+    if ($before !== "" && !is_array($decoded)) out(["ok" => false, "error" => "corrupt"], 500);
+    $data = defaults($decoded);
     $result = $fn($data);
     if ($write) {
         prune($data);
@@ -103,8 +112,12 @@ function withStore($write, $fn)
         if ($json !== false) {
             ftruncate($fp, 0);
             rewind($fp);
-            fwrite($fp, $json);
+            $written = fwrite($fp, $json);
             fflush($fp);
+            if ($written !== strlen($json)) {
+                ftruncate($fp, 0); rewind($fp); fwrite($fp, $before); fflush($fp);
+                out(["ok" => false, "error" => "write"], 500);
+            }
         }
     }
     flock($fp, LOCK_UN);
@@ -113,7 +126,22 @@ function withStore($write, $fn)
 }
 
 $idRe = '/^[a-zA-Z0-9_-]{1,32}$/';
-$roomRe = '/^[A-Z2-9]{4}$/';
+$roomRe = '/^[A-Z2-9]{6}$/';
+
+function liveRoom($r) {
+    return is_array($r) && isset($r['peers']) && time() - $r['t'] <= ROOM_TTL && time() - $r['c'] <= ROOM_MAX_LIFE;
+}
+
+function authenticatedPeer($r) {
+    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+    if (!preg_match('/^Bearer ([a-f0-9]{64})$/', $header, $m)) return null;
+    $hash = hash('sha256', $m[1]);
+    foreach ($r['peers'] ?? [] as $id => $expected) {
+        if (hash_equals($expected, $hash)) return $id;
+    }
+    return null;
+}
+
 
 if ($_SERVER["REQUEST_METHOD"] === "GET") {
     if (($_GET["a"] ?? "") !== "poll") {
@@ -122,14 +150,15 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     $room = $_GET["room"] ?? "";
     $for = $_GET["for"] ?? "";
     $after = (int) ($_GET["after"] ?? 0);
-    if (!preg_match($roomRe, $room) || !preg_match($idRe, $for)) {
+    if (!is_string($room) || !is_string($for) || !preg_match($roomRe, $room) || !preg_match($idRe, $for)) {
         out(["ok" => false, "error" => "params"], 400);
     }
     $res = withStore(false, function ($data) use ($room, $for, $after) {
         $r = $data["rooms"][$room] ?? null;
-        if (!$r) {
+        if (!liveRoom($r)) {
             return ["ok" => false, "error" => "no room"];
         }
+        if (authenticatedPeer($r) !== $for) return ["ok" => false, "error" => "unauthorized"];
         $msgs = [];
         $cursor = $after;
         foreach ($r["msgs"] ?? [] as $m) {
@@ -142,7 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         }
         return ["ok" => true, "msgs" => $msgs, "cursor" => $cursor];
     });
-    out($res, empty($res["ok"]) ? 404 : 200);
+    out($res, empty($res["ok"]) ? (($res["error"] ?? "") === "unauthorized" ? 403 : 404) : 200);
 }
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
@@ -161,6 +190,7 @@ if (!is_array($body)) {
     out(["ok" => false, "error" => "bad body"], 400);
 }
 $a = $body["a"] ?? "";
+if (in_array($a, ["create", "join"], true) && ($body["v"] ?? null) !== 2) out(["ok" => false, "error" => "Reload the game to update multiplayer."], 426);
 
 if ($a === "create") {
     $ip = ipKey();
@@ -187,19 +217,24 @@ if ($a === "create") {
         $alpha = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         do {
             $code = "";
-            for ($i = 0; $i < 4; $i++) {
+            for ($i = 0; $i < 6; $i++) {
                 $code .= $alpha[random_int(0, strlen($alpha) - 1)];
             }
         } while (isset($data["rooms"][$code]));
+        $token = bin2hex(random_bytes(32));
         $data["rooms"][$code] = [
             "t" => $now,
             "c" => $now,
             "n" => 0,
             "ip" => $ip,
             "msgs" => [],
+            "peers" => ["host" => hash("sha256", $token)],
         ];
+        if (count($data["ips"]) >= MAX_JOIN_IPS && !isset($data["ips"][$ip])) {
+            asort($data["ips"]); $data["ips"] = array_slice($data["ips"], -MAX_JOIN_IPS + 1, null, true);
+        }
         $data["ips"][$ip] = $now;
-        return ["ok" => true, "room" => $code];
+        return ["ok" => true, "room" => $code, "peer" => "host", "token" => $token];
     });
     $status = empty($res["ok"])
         ? ($res["error"] === "rate" || $res["error"] === "limit" ? 429 : 503)
@@ -207,20 +242,29 @@ if ($a === "create") {
     out($res, $status);
 }
 
-$room = strtoupper((string) ($body["room"] ?? ""));
+if (!is_string($body["room"] ?? "")) out(["ok" => false, "error" => "room"], 400);
+$room = strtoupper($body["room"] ?? "");
 if (!preg_match($roomRe, $room)) {
     out(["ok" => false, "error" => "room"], 400);
 }
 
 if ($a === "join") {
     $res = withStore(true, function (&$data) use ($room) {
-        if (!isset($data["rooms"][$room])) {
-            return ["ok" => false, "error" => "no room"];
-        }
-        $data["rooms"][$room]["t"] = time(); // keep a joined room alive
-        return ["ok" => true];
+        prune($data);
+        $ip = ipKey(); $now = time();
+        $entry = $data["joins"][$ip] ?? ["t" => $now, "n" => 0];
+        if ($entry["n"] >= 20) return ["ok" => false, "error" => "rate"];
+        if (!isset($data["joins"][$ip]) && count($data["joins"] ?? []) >= MAX_JOIN_IPS) return ["ok" => false, "error" => "busy"];
+        $entry["n"]++; $data["joins"][$ip] = $entry;
+        if (!liveRoom($data["rooms"][$room] ?? null)) return ["ok" => false, "error" => "no room"];
+        $r = &$data["rooms"][$room];
+        if (count($r["peers"]) >= MAX_PEERS) return ["ok" => false, "error" => "full"];
+        $id = bin2hex(random_bytes(12)); $token = bin2hex(random_bytes(32));
+        $r["peers"][$id] = hash("sha256", $token);
+        $r["t"] = $now;
+        return ["ok" => true, "peer" => $id, "token" => $token];
     });
-    out($res, empty($res["ok"]) ? 404 : 200);
+    out($res, empty($res["ok"]) ? (($res["error"] ?? "") === "rate" ? 429 : 404) : 200);
 }
 
 if ($a === "msg") {
@@ -230,6 +274,7 @@ if ($a === "msg") {
     // p is a structured signal ({t:"sdp",d} / {t:"ice",c}) — keep it as-is, but
     // cap its serialized size so one peer can't bloat the shared store.
     if (
+        !is_string($from) || !is_string($to) ||
         !preg_match($idRe, $from) ||
         !preg_match($idRe, $to) ||
         $p === null ||
@@ -238,10 +283,13 @@ if ($a === "msg") {
         out(["ok" => false, "error" => "params"], 400);
     }
     $res = withStore(true, function (&$data) use ($room, $from, $to, $p) {
-        if (!isset($data["rooms"][$room])) {
+        if (!liveRoom($data["rooms"][$room] ?? null)) {
             return ["ok" => false, "error" => "no room"];
         }
         $r = &$data["rooms"][$room];
+        if (authenticatedPeer($r) !== $from || !isset($r["peers"][$to]) || ($from !== "host" && $to !== "host")) {
+            return ["ok" => false, "error" => "unauthorized"];
+        }
         $r["t"] = time();
         $r["n"] = ($r["n"] ?? 0) + 1;
         $r["msgs"][] = [
@@ -262,7 +310,7 @@ if ($a === "msg") {
         }
         return ["ok" => true, "i" => $r["n"]];
     });
-    out($res, empty($res["ok"]) ? 404 : 200);
+    out($res, empty($res["ok"]) ? (($res["error"] ?? "") === "unauthorized" ? 403 : 404) : 200);
 }
 
 out(["ok" => false, "error" => "action"], 400);

@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node Tests/RunAll.js && node Tests/SimProbe.mjs"
+    "test": "node Tests/RunAll.js && node Tests/SimProbe.mjs",
+    "test:security": "python3 Tests/SignalApi.py"
   }
 }

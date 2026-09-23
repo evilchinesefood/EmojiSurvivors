@@ -7,3 +7,6 @@
 
 # No directory listing of Api/.
 Options -Indexes
+
+# Pass private per-player tokens to the PHP CGI runtime.
+CGIPassAuth On

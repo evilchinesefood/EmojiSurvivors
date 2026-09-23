@@ -78,7 +78,7 @@ Tests/      zero-dep unit suite + seeded sim probe
 ```
 
 The PHP backends (online leaderboard + co-op signaling) live in `Api/` and deploy
-separately via rsync. The endpoint code is in the repo, but the signing salts
+with the client through `Scripts/Deploy.sh`. The endpoint code is in the repo, but the signing salts
 (`Api/Secret.php` — copy `Api/Secret.example.php`) and the live JSON data stores are not.
 
 Adding content (a new weapon, enemy, character, power-grid row) is data-only — drop a def
@@ -101,3 +101,9 @@ Personal project. Font Awesome Pro and Web Awesome are commercial Fonticons prod
 are **not** included here — supply your own under your own license (see Vendored assets).
 
 Built with [Claude Code](https://claude.com/claude-code).
+
+## Security checks and deployment
+
+Co-op uses six-character room codes and server-issued private peer tokens. The room code invites guests; each peer token authorizes that peer’s messages and polling. After this security update, refresh both players’ tabs and create a new lobby. Old four-character lobbies and clients are incompatible. Local saves and leaderboard records are preserved.
+
+Run `npm run test:security` with PHP and Node installed for temporary-storage authorization tests, in addition to `npm test`. `bash Scripts/Deploy.sh` runs both and previews deployment; add `--live` to deploy. It preserves server secrets, live JSON stores, and licensed assets absent locally, and sets files/directories to 0644/0755. Service-worker cache versions must be bumped when cached client files change.

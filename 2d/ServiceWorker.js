@@ -1,6 +1,6 @@
 // Caches are origin-scoped and SHARED with the 3D game's SW — only ever delete
 // our own caches (NOT emojisurvivors3d-*), or the two games wipe each other.
-const CACHE = "emojisurvivors-v22";
+const CACHE = "emojisurvivors-v24-security";
 const isOurs = (k) =>
   k.startsWith("emojisurvivors-") && !k.startsWith("emojisurvivors3d-");
 const SHELL_FIRST_PARTY = [
@@ -118,7 +118,7 @@ self.addEventListener("install", (e) => {
       .open(CACHE)
       .then((c) =>
         c
-          .addAll(SHELL_FIRST_PARTY)
+          .addAll(SHELL_FIRST_PARTY.map((path) => new Request(path, { cache: "reload" })))
           .then(() => Promise.allSettled(SHELL_VENDOR.map((u) => c.add(u)))),
       )
       .then(() => self.skipWaiting()),

@@ -2,26 +2,38 @@
 // message mailbox, used only for the WebRTC handshake while a lobby is open.
 const API = "/survivors/Api/Signal.php"; // shared across versions (rooms are version-gated)
 
-async function post(body) {
+const sessions = new Map();
+
+async function post(body, token) {
   const r = await fetch(API, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(body),
   });
   return r.json();
 }
 
 export const signal = {
-  create: () => post({ a: "create" }),
-  join: (room) => post({ a: "join", room }),
+  async create() {
+    const r = await post({ a: "create", v: 2 });
+    if (r.ok) sessions.set(`${r.room}:${r.peer}`, r.token);
+    return r;
+  },
+  async join(room) {
+    const r = await post({ a: "join", room, v: 2 });
+    if (r.ok) sessions.set(`${room}:${r.peer}`, r.token);
+    return r;
+  },
   // Handshake messages MUST land — a silently dropped SDP offer/answer kills the
   // join forever. Retry through transient 503s (store lock contention) / blips.
   async send(room, from, to, p) {
     for (let i = 0; i < 4; i++) {
       try {
-        const r = await post({ a: "msg", room, from, to, p });
+        const token = sessions.get(`${room}:${from}`);
+        if (!token) return false;
+        const r = await post({ a: "msg", room, from, to, p }, token);
         if (r && r.ok) return true;
-        if (r && r.error === "no room") return false; // dead room — stop
+        if (r && ["no room", "unauthorized"].includes(r.error)) return false; // dead room — stop
       } catch {
         /* network blip — retry */
       }
@@ -45,7 +57,9 @@ export const signal = {
             encodeURIComponent(me) +
             "&after=" +
             cursor,
+          { headers: { Authorization: `Bearer ${sessions.get(`${room}:${me}`) || ""}` } },
         ).then((x) => x.json());
+        if (["unauthorized", "no room"].includes(r.error)) { stopped = true; return; }
         if (r.ok) {
           cursor = r.cursor;
           for (const m of r.msgs) onMsg(m.from, m.p);

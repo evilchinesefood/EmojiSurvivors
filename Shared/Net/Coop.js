@@ -353,7 +353,6 @@ export function makeCoop(version = "1") {
     C.myChar = charId;
     C.error = "";
     C.room = code.toUpperCase();
-    me = peerId();
     const r = await signal.join(C.room).catch(() => null);
     if (!r || !r.ok) {
       C.error = "Room not found";
@@ -361,6 +360,7 @@ export function makeCoop(version = "1") {
       C.onLobby?.();
       return;
     }
+    me = r.peer;
     tables = makeTables();
     gConnected = false;
     peer = makePeer({
