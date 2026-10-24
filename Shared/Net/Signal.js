@@ -3,12 +3,15 @@
 const API = "/survivors/Api/Signal.php"; // shared across versions (rooms are version-gated)
 
 const sessions = new Map();
+const guests = new Map();
+const joining = new Map();
 
-async function post(body, token) {
+async function post(body, token, keepalive = false) {
   const r = await fetch(API, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(body),
+    keepalive,
   });
   return r.json();
 }
@@ -20,9 +23,42 @@ export const signal = {
     return r;
   },
   async join(room) {
-    const r = await post({ a: "join", room, v: 2 });
-    if (r.ok) sessions.set(`${room}:${r.peer}`, r.token);
-    return r;
+    if (joining.has(room)) return joining.get(room);
+    const request = (async () => {
+      const prior = guests.get(room);
+      let r = await post({ a: "join", room, v: 2 }, prior?.token);
+      if (prior && r.error === "unauthorized") {
+        sessions.delete(`${room}:${prior.peer}`);
+        guests.delete(room);
+        r = await post({ a: "join", room, v: 2 });
+      }
+      if (r.ok) {
+        sessions.set(`${room}:${r.peer}`, r.token);
+        guests.set(room, { peer: r.peer, token: r.token });
+      }
+      return r;
+    })();
+    joining.set(room, request);
+    try { return await request; }
+    finally { joining.delete(room); }
+  },
+  async confirm(room, peers) {
+    const token = sessions.get(`${room}:host`);
+    if (!token) return false;
+    return post({ a: "confirm", room, peers }, token).then((r) => !!r.ok).catch(() => false);
+  },
+  async leave(room, peer) {
+    const key = `${room}:${peer}`;
+    const token = sessions.get(key);
+    if (!token) return false;
+    sessions.delete(key);
+    if (guests.get(room)?.peer === peer) guests.delete(room);
+    return post({ a: "leave", room, peer }, token, true).then((r) => !!r.ok).catch(() => false);
+  },
+  async release(room, peer) {
+    const token = sessions.get(`${room}:host`);
+    if (!token || peer === "host") return false;
+    return post({ a: "leave", room, peer }, token, true).then((r) => !!r.ok).catch(() => false);
   },
   // Handshake messages MUST land — a silently dropped SDP offer/answer kills the
   // join forever. Retry through transient 503s (store lock contention) / blips.

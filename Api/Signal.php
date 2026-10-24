@@ -3,11 +3,13 @@
 // handshake (SDP offers/answers + ICE candidates). Polled only while a lobby is
 // open; once peers connect, gameplay traffic is pure P2P and never touches this.
 //   POST {a:"create"}                          -> { ok, room }
-//   POST {a:"join", room}                      -> { ok }
+//   POST {a:"join", room, v:2}                 -> { ok, peer, token }
+//   POST {a:"confirm", room, peers:[ID]}      -> { ok } (host only)
+//   POST {a:"leave", room, peer:ID}           -> { ok } (self or host)
 //   POST {a:"msg", room, from, to, p}          -> { ok, i }
 //   GET  ?a=poll&room=R&for=ID&after=N         -> { ok, msgs:[{i,from,p}], cursor }
-// No secrets here; abuse is bounded by caps + TTL. Data file is denied by
-// Api/.htaccess. Same single-file flock pattern as Leaderboard.php.
+// Peer tokens authorize mailbox access. Caps and TTL bound pending admissions.
+// Api/.htaccess denies the data file; flock serializes store mutations.
 ini_set("display_errors", "0");
 ini_set("log_errors", "1");
 error_reporting(E_ALL);
@@ -20,7 +22,11 @@ const DATA = __DIR__ . "/SignalData.json";
 const ROOM_TTL = 1800; // 30 min
 const ROOM_MAX_LIFE = 7200; // hard ceiling regardless of keep-alive pings (2h)
 const MAX_ROOMS = 40;
-const MAX_PEERS = 32; // bounded reconnect identities per room
+const MAX_PENDING = 12;
+const MAX_PENDING_PER_IP = 3;
+const MAX_GUESTS = 3;
+const PENDING_TTL = 45; // guests cannot renew an unaccepted admission
+const ACCEPTED_TTL = 90; // renewed only by the host while the lobby is open
 const MAX_JOIN_IPS = 5000;
 const MAX_MSGS = 400; // per room (trickle ICE is chatty)
 const MAX_BODY = 65536; // SDP blobs run ~5-10KB
@@ -63,6 +69,13 @@ function ipKey()
     return substr(hash("sha256", ($_SERVER["REMOTE_ADDR"] ?? "?") . IP_SALT), 0, 32);
 }
 
+function removePeer(&$r, $id)
+{
+    unset($r["peers"][$id], $r["peerState"][$id]);
+    $r["msgs"] = array_values(array_filter($r["msgs"] ?? [],
+        fn($m) => $m["from"] !== $id && $m["to"] !== $id));
+}
+
 function prune(&$data)
 {
     $now = time();
@@ -71,7 +84,15 @@ function prune(&$data)
         $old = $now - ($r["c"] ?? ($r["t"] ?? 0)) > ROOM_MAX_LIFE;
         if ($idle || $old || !isset($r["peers"])) {
             unset($data["rooms"][$code]);
+            continue;
         }
+        foreach ($r["peers"] as $id => $_hash) {
+            if ($id === "host") continue;
+            // Retain existing room tokens when upgrading the store in place.
+            $r["peerState"][$id] ??= ["expires" => $now + PENDING_TTL, "accepted" => false, "ip" => "legacy"];
+            if ($r["peerState"][$id]["expires"] <= $now) removePeer($r, $id);
+        }
+        $data["rooms"][$code] = $r;
     }
     foreach ($data["joins"] ?? [] as $k => $entry) {
         if ($now - $entry["t"] > 60) unset($data["joins"][$k]);
@@ -105,6 +126,7 @@ function withStore($write, $fn)
     $decoded = json_decode($before, true);
     if ($before !== "" && !is_array($decoded)) out(["ok" => false, "error" => "corrupt"], 500);
     $data = defaults($decoded);
+    prune($data);
     $result = $fn($data);
     if ($write) {
         prune($data);
@@ -250,21 +272,75 @@ if (!preg_match($roomRe, $room)) {
 
 if ($a === "join") {
     $res = withStore(true, function (&$data) use ($room) {
-        prune($data);
         $ip = ipKey(); $now = time();
+        if (!liveRoom($data["rooms"][$room] ?? null)) return ["ok" => false, "error" => "no room"];
+        $r = &$data["rooms"][$room];
+        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+        if ($header !== '') {
+            $id = authenticatedPeer($r);
+            if ($id === null || $id === "host") return ["ok" => false, "error" => "unauthorized"];
+            return ["ok" => true, "peer" => $id, "token" => substr($header, 7)];
+        }
         $entry = $data["joins"][$ip] ?? ["t" => $now, "n" => 0];
         if ($entry["n"] >= 20) return ["ok" => false, "error" => "rate"];
         if (!isset($data["joins"][$ip]) && count($data["joins"] ?? []) >= MAX_JOIN_IPS) return ["ok" => false, "error" => "busy"];
         $entry["n"]++; $data["joins"][$ip] = $entry;
-        if (!liveRoom($data["rooms"][$room] ?? null)) return ["ok" => false, "error" => "no room"];
-        $r = &$data["rooms"][$room];
-        if (count($r["peers"]) >= MAX_PEERS) return ["ok" => false, "error" => "full"];
+        $pending = 0; $mine = 0;
+        foreach ($r["peerState"] ?? [] as $state) {
+            if ($state["accepted"]) continue;
+            $pending++;
+            if ($state["ip"] === $ip) $mine++;
+        }
+        if ($pending >= MAX_PENDING || $mine >= MAX_PENDING_PER_IP) return ["ok" => false, "error" => "rate"];
         $id = bin2hex(random_bytes(12)); $token = bin2hex(random_bytes(32));
         $r["peers"][$id] = hash("sha256", $token);
-        $r["t"] = $now;
+        $r["peerState"][$id] = ["expires" => $now + PENDING_TTL, "accepted" => false, "ip" => $ip];
         return ["ok" => true, "peer" => $id, "token" => $token];
     });
-    out($res, empty($res["ok"]) ? (($res["error"] ?? "") === "rate" ? 429 : 404) : 200);
+    out($res, empty($res["ok"]) ? (["rate" => 429, "busy" => 503, "unauthorized" => 403][$res["error"]] ?? 404) : 200);
+}
+
+if ($a === "confirm") {
+    $peers = $body["peers"] ?? null;
+    if (!is_array($peers) || !array_is_list($peers) || count($peers) > MAX_GUESTS) out(["ok" => false, "error" => "peers"], 400);
+    foreach ($peers as $id) {
+        if (!is_string($id) || $id === "host" || !preg_match($idRe, $id)) out(["ok" => false, "error" => "peers"], 400);
+    }
+    if (count(array_unique($peers)) !== count($peers)) out(["ok" => false, "error" => "peers"], 400);
+    $res = withStore(true, function (&$data) use ($room, $peers) {
+        if (!liveRoom($data["rooms"][$room] ?? null)) return ["ok" => false, "error" => "no room"];
+        $r = &$data["rooms"][$room];
+        if (authenticatedPeer($r) !== "host") return ["ok" => false, "error" => "unauthorized"];
+        $accepted = [];
+        foreach ($r["peerState"] ?? [] as $id => $state) if ($state["accepted"]) $accepted[$id] = true;
+        foreach ($peers as $id) {
+            if (!isset($r["peers"][$id])) return ["ok" => false, "error" => "peer"];
+            $accepted[$id] = true;
+        }
+        if (count($accepted) > MAX_GUESTS) return ["ok" => false, "error" => "full"];
+        foreach ($peers as $id) {
+            $r["peerState"][$id]["accepted"] = true;
+            $r["peerState"][$id]["expires"] = time() + ACCEPTED_TTL;
+        }
+        $r["t"] = time();
+        return ["ok" => true];
+    });
+    out($res, empty($res["ok"]) ? (["unauthorized" => 403, "peer" => 400, "full" => 409][$res["error"]] ?? 404) : 200);
+}
+
+if ($a === "leave") {
+    $peer = $body["peer"] ?? null;
+    if (!is_string($peer) || !preg_match($idRe, $peer)) out(["ok" => false, "error" => "peer"], 400);
+    $res = withStore(true, function (&$data) use ($room, $peer) {
+        if (!liveRoom($data["rooms"][$room] ?? null)) return ["ok" => false, "error" => "no room"];
+        $r = &$data["rooms"][$room];
+        $actor = authenticatedPeer($r);
+        if ($actor === null || ($actor !== "host" && $actor !== $peer)) return ["ok" => false, "error" => "unauthorized"];
+        if ($peer === "host") unset($data["rooms"][$room]);
+        else removePeer($r, $peer);
+        return ["ok" => true];
+    });
+    out($res, empty($res["ok"]) ? ($res["error"] === "unauthorized" ? 403 : 404) : 200);
 }
 
 if ($a === "msg") {
@@ -290,7 +366,7 @@ if ($a === "msg") {
         if (authenticatedPeer($r) !== $from || !isset($r["peers"][$to]) || ($from !== "host" && $to !== "host")) {
             return ["ok" => false, "error" => "unauthorized"];
         }
-        $r["t"] = time();
+        if ($from === "host") $r["t"] = time();
         $r["n"] = ($r["n"] ?? 0) + 1;
         $r["msgs"][] = [
             "i" => $r["n"],

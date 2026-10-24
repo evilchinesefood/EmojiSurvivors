@@ -26,5 +26,6 @@ import "./Allies.Test.js";
 import "./Protocol.Test.js";
 import "./Screens.Test.js";
 import "./SharedSave.Test.js";
+import "./CoopLifecycle.Test.js";
 
 run(process.argv[2]);

@@ -24,7 +24,7 @@ at the deadline. Coins persist between runs to power up your account.
   including an **infinite Ascension** row so coins always have a use.
 - **Enemy tiers** that unlock as the run heats up, **elites** that drop chests, and a
   **boss per run length** — **5 / 10 / 15 / 30 min**. Kill it to win.
-- **Leaderboards** — local records plus an opt-in online global board, split by length,
+- **Personal records** — saved on your device, split by length,
   standard/endless, and normal/hard.
 - **Modifiers** including **Hard Mode** (roughly triple the threat — standing still is
   fatal), Endless, and a stack of run mutators, unlocked by playing and winning.
@@ -36,7 +36,7 @@ at the deadline. Coins persist between runs to power up your account.
 - **Two dimensions, one sim** — a 2D top-down build and a 3D first-person build (mouse-look,
   trigger fire, an instanced billboard world) that runs the identical engine.
 - **4-player online co-op** — host-authoritative WebRTC P2P with per-player level-ups, plus
-  full **gamepad** support. (Save data and leaderboards are shared across both versions.)
+  full **gamepad** support. (Save data and personal records are shared across both versions.)
 
 ## Controls
 
@@ -68,7 +68,7 @@ Shared/
   Systems/  movement · spawner · weapons · combat · pickups · leveling · stats · evolutions   (pure, DOM-free)
   Content/  characters · weapons · passives · enemies · bosses · power grid · curves          (data-driven)
   Net/      WebRTC co-op — signaling · peer · binary snapshot protocol · session
-  Meta/     versioned localStorage save · account state · local + online leaderboards
+  Meta/     versioned localStorage save · account state · personal records
   Audio/    WebAudio SFX synth
   UI/       Web Awesome screens + HUD
   Styles/   shared CSS · Vendor/ (Web Awesome + Font Awesome — bring your own, not committed)
@@ -77,9 +77,11 @@ Shared/
 Tests/      zero-dep unit suite + seeded sim probe
 ```
 
-The PHP backends (online leaderboard + co-op signaling) live in `Api/` and deploy
-with the client through `Scripts/Deploy.sh`. The endpoint code is in the repo, but the signing salts
-(`Api/Secret.php` — copy `Api/Secret.example.php`) and the live JSON data stores are not.
+The co-op signaling backend lives in `Api/` and deploys with the client through
+`Scripts/Deploy.sh`. Server secrets (`Api/Secret.php` — copy `Api/Secret.example.php`)
+and live JSON data stores are not in the repository. Public rankings are retired:
+`Api/Leaderboard.php` returns HTTP 410 for old clients without reading or changing
+historical records. Personal records remain in the existing browser save.
 
 Adding content (a new weapon, enemy, character, power-grid row) is data-only — drop a def
 into `Shared/Content/*` and it bolts on without touching the systems.
@@ -104,6 +106,8 @@ Built with [Claude Code](https://claude.com/claude-code).
 
 ## Security checks and deployment
 
-Co-op uses six-character room codes and server-issued private peer tokens. The room code invites guests; each peer token authorizes that peer’s messages and polling. After this security update, refresh both players’ tabs and create a new lobby. Old four-character lobbies and clients are incompatible. Local saves and leaderboard records are preserved.
+Co-op uses six-character room codes and server-issued private peer tokens. The room code invites guests; each peer token authorizes that peer’s messages and polling. Authenticated retries reuse the guest identity. Pending joins expire after 45 seconds, with at most 12 per room and 3 per IP; guest traffic cannot extend their lifetime or the room lifetime. Only the host can confirm up to three connected guests, renewing their 90-second signaling leases every 15 seconds while the lobby is open. Leaving releases a guest identity; the host releases disconnected guests and closes its room on exit. Once a run starts, gameplay stays P2P and does not require signaling leases.
+
+Refresh all players’ tabs and create a new lobby after this update so every player has the lifecycle-aware client. Existing token hashes are preserved when signaling metadata is added. Browser saves, personal records, historical leaderboard JSON, and server secrets are preserved; the deployment does not migrate or delete them.
 
 Run `npm run test:security` with PHP and Node installed for temporary-storage authorization tests, in addition to `npm test`. `bash Scripts/Deploy.sh` runs both and previews deployment; add `--live` to deploy. It preserves server secrets, live JSON stores, and licensed assets absent locally, and sets files/directories to 0644/0755. Service-worker cache versions must be bumped when cached client files change.

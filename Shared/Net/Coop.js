@@ -3,7 +3,7 @@
 // step; ~20Hz binary snapshots + reliable ctrl notices go back out.
 // GUEST: no sim — sends input, holds the last two snapshots, and serves an
 // interpolated renderer-shaped "ghost" with locally-predicted self position.
-import { signal, peerId } from "./Signal.js";
+import { signal } from "./Signal.js";
 import { makePeer } from "./Rtc.js";
 import {
   makeTables,
@@ -39,6 +39,7 @@ export function makeCoop(version = "1") {
 
   let tables = null;
   let poller = null;
+  let sessionGeneration = 0;
   let lobby = []; // [{slot, name, char, host, connected}]
 
   // ── host side
@@ -47,7 +48,6 @@ export function makeCoop(version = "1") {
   let lastSnapAt = 0;
   let lastBossName = "";
   let lastLevel = 1; // host level watermark — each gain deals every ally a hand
-  let nextSlot = 1;
 
   // ── guest side
   let peer = null;
@@ -56,6 +56,7 @@ export function makeCoop(version = "1") {
   let gConnected = false;
   let connectTimer = 0; // guest: bail out of a handshake that never completes
   let reapTimer = 0; // host: free slots held by joins that never connected
+  let leaseTimer = 0;
   let gHand = null; // guest: the upgrade hand currently offered by the host
   let gTray = null; // guest: own loadout summary [{e, l}] for the HUD tray
   let snapPrev = null; // {at, s}
@@ -95,8 +96,10 @@ export function makeCoop(version = "1") {
     for (const g of guests.values()) if (g.connected) g.peer.sendCtrl(obj);
   }
 
-  function dropGuest(g, silent) {
+  function dropGuest(g, silent, release = true) {
+    if (guests.get(g.id) !== g) return;
     guests.delete(g.id);
+    if (release && C.mode === "host") signal.release(C.room, g.id);
     try {
       g.peer?.close();
     } catch {
@@ -109,14 +112,24 @@ export function makeCoop(version = "1") {
     }
   }
 
+  function renewGuests() {
+    if (C.mode === "host" && !C.started)
+      signal.confirm(C.room, [...guests.values()].filter((g) => g.connected).map((g) => g.id));
+  }
+
   async function hostOpen(name, charId) {
     shutdown();
+    const generation = sessionGeneration;
     C.mode = "host";
     C.myName = name;
     C.myChar = charId;
     C.error = "";
     tables = makeTables();
     const r = await signal.create().catch(() => null);
+    if (generation !== sessionGeneration) {
+      if (r?.ok) signal.leave(r.room, "host");
+      return;
+    }
     if (!r || !r.ok) {
       C.error = "Could not create a room";
       C.mode = "off";
@@ -125,8 +138,8 @@ export function makeCoop(version = "1") {
     }
     C.room = r.room;
     poller = signal.makePoller(C.room, "host", (from, p) => {
+      if (generation !== sessionGeneration) return;
       if (p.t === "hello") {
-        if (guests.has(from)) return;
         if (p.v !== version) {
           signal.send(C.room, "host", from, {
             t: "reject",
@@ -134,7 +147,7 @@ export function makeCoop(version = "1") {
           });
           return;
         }
-        if (guests.size >= MAX_GUESTS || C.started) {
+        if ((!guests.has(from) && guests.size >= MAX_GUESTS) || C.started) {
           // Tell them why — silence reads as "joining doesn't work".
           signal.send(C.room, "host", from, {
             t: "reject",
@@ -142,9 +155,12 @@ export function makeCoop(version = "1") {
           });
           return;
         }
+        const previous = guests.get(from);
+        if (previous) dropGuest(previous, true, false);
+        const occupied = new Set([...guests.values()].map((g) => g.slot));
         const g = {
           id: from,
-          slot: nextSlot++,
+          slot: previous?.slot ?? [1, 2, 3].find((slot) => !occupied.has(slot)),
           name: String(p.name || "Player")
             .replace(/[\x00-\x1f<>]/g, "")
             .slice(0, 16),
@@ -185,7 +201,9 @@ export function makeCoop(version = "1") {
             }
           },
           onOpen: () => {
+            if (guests.get(g.id) !== g) return;
             g.connected = true;
+            renewGuests();
             rebuildLobby();
           },
           onClose: () => dropGuest(g),
@@ -203,6 +221,7 @@ export function makeCoop(version = "1") {
       for (const g of [...guests.values()])
         if (!g.connected && performance.now() - g.born > 25000) dropGuest(g);
     }, 5000);
+    leaseTimer = setInterval(renewGuests, 15000);
     rebuildLobby();
   }
 
@@ -224,6 +243,7 @@ export function makeCoop(version = "1") {
     poller?.stop();
     poller = null;
     clearInterval(reapTimer);
+    clearInterval(leaseTimer);
     lastBossName = "";
     lastLevel = state.player.level; // Head Start can begin above 1
     for (const g of guests.values())
@@ -347,15 +367,22 @@ export function makeCoop(version = "1") {
 
   // ── guest side
   async function guestJoin(code, name, charId) {
-    shutdown();
+    const room = code.toUpperCase();
+    shutdown(C.mode === "guest" && C.room === room);
+    const generation = sessionGeneration;
     C.mode = "guest";
     C.myName = name;
     C.myChar = charId;
     C.error = "";
-    C.room = code.toUpperCase();
+    C.room = room;
     const r = await signal.join(C.room).catch(() => null);
+    if (generation !== sessionGeneration) {
+      // Concurrent retries may share this admission with the current join.
+      if (r?.ok && !(C.mode === "guest" && C.room === room)) signal.leave(room, r.peer);
+      return;
+    }
     if (!r || !r.ok) {
-      C.error = "Room not found";
+      C.error = r?.error === "rate" ? "Too many pending joins — try again in a minute" : "Room not found";
       C.mode = "off";
       C.onLobby?.();
       return;
@@ -369,6 +396,7 @@ export function makeCoop(version = "1") {
       onCtrl: guestCtrl,
       onSnap: guestSnap,
       onOpen: () => {
+        if (generation !== sessionGeneration) return;
         gConnected = true;
         clearTimeout(connectTimer);
         poller?.stop();
@@ -376,6 +404,7 @@ export function makeCoop(version = "1") {
         C.onLobby?.();
       },
       onClose: () => {
+        if (generation !== sessionGeneration || C.mode !== "guest") return;
         clearTimeout(connectTimer);
         const inRun = C.mode === "guest" && C.started;
         const inLobby = C.mode === "guest" && !C.started;
@@ -388,6 +417,7 @@ export function makeCoop(version = "1") {
       },
     });
     poller = signal.makePoller(C.room, me, (from, p) => {
+      if (generation !== sessionGeneration) return;
       if (from !== "host") return;
       if (p.t === "sdp" || p.t === "ice") peer?.onSignal(p);
       else if (p.t === "reject") {
@@ -405,6 +435,7 @@ export function makeCoop(version = "1") {
       char: charId,
       v: version,
     });
+    if (generation !== sessionGeneration) return;
     if (!ok) {
       shutdown();
       C.error = "Could not reach the room — try again";
@@ -622,26 +653,36 @@ export function makeCoop(version = "1") {
     shutdown();
   }
 
-  function shutdown() {
+  function shutdown(keepSession = false) {
+    sessionGeneration++;
+    const oldRoom = C.room;
+    const oldPeer = C.mode === "host" ? "host" : C.mode === "guest" ? me : "";
+    C.mode = "off";
+    C.room = "";
     poller?.stop();
     poller = null;
     clearTimeout(connectTimer);
     clearInterval(reapTimer);
+    clearInterval(leaseTimer);
     gConnected = false;
-    for (const g of guests.values()) {
+    const oldGuests = guests;
+    guests = new Map();
+    for (const g of oldGuests.values()) {
       try {
         g.peer?.close();
       } catch {
         /* gone */
       }
     }
-    guests = new Map();
+    const oldConnection = peer;
+    peer = null;
     try {
-      peer?.close();
+      oldConnection?.close();
     } catch {
       /* gone */
     }
-    peer = null;
+    if (!keepSession && oldRoom && oldPeer) signal.leave(oldRoom, oldPeer);
+    me = "";
     hostState = null;
     snapPrev = snapCur = null;
     pred = null;
@@ -651,13 +692,15 @@ export function makeCoop(version = "1") {
     gTray = null;
     lastLevel = 1;
     lobby = [];
-    nextSlot = 1;
     mySlot = -1;
-    C.mode = "off";
     C.started = false;
-    C.room = "";
     C.error = "";
   }
+
+  globalThis.addEventListener?.("pagehide", () => {
+    shutdown();
+    C.onLobby?.();
+  });
 
   return Object.assign(C, {
     hostOpen,

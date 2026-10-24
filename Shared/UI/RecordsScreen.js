@@ -4,7 +4,6 @@ import { RUN_LENGTHS } from "../Content/Curve.js";
 import { MOD_DEFS } from "../Content/Modifiers.js";
 import { CHARACTERS } from "../Content/Characters.js";
 import { topFor } from "../Meta/Records.js";
-import { fetchBoard } from "../Meta/OnlineBoard.js";
 
 const LABELS = { 300: "5 min", 600: "10 min", 900: "15 min", 1800: "30 min" };
 
@@ -15,8 +14,7 @@ function mmss(sec) {
 
 export function RecordsScreen(ctx) {
   const meta = ctx.meta;
-  const view = { scope: "local", len: 300, mode: "standard", diff: "normal" };
-  let fetchSeq = 0;
+  const view = { len: 300, mode: "standard", diff: "normal" };
 
   const controls = h("div", {
     class: "col",
@@ -33,7 +31,7 @@ export function RecordsScreen(ctx) {
       : (e.won ? "✓ won · " : "✗ ") + e.kills + " kills";
   const when = (e) => (e.date ? new Date(e.date).toLocaleDateString() : "");
 
-  const row = (e, i, global) =>
+  const row = (e, i) =>
     h(
       "div",
       { class: "grid-row", style: "gap:.6rem" },
@@ -46,8 +44,8 @@ export function RecordsScreen(ctx) {
       h(
         "div",
         { class: "col", style: "gap:0;flex:1;min-width:0" },
-        h("strong", {}, global ? e.n || "Anonymous 👻" : metricLabel(e)),
-        h("span", { class: "pick-tag" }, global ? metricLabel(e) : when(e)),
+        h("strong", {}, metricLabel(e)),
+        h("span", { class: "pick-tag" }, when(e)),
       ),
       h(
         "span",
@@ -57,14 +55,14 @@ export function RecordsScreen(ctx) {
       h("span", { class: "pick-tag" }, mmss(e.time) + " · L" + (e.level || 1)),
     );
 
-  function fill(entries, global) {
+  function fill(entries) {
     if (!entries.length) {
       list.replaceChildren(
         h("div", { class: "subtitle" }, "no runs here yet — die heroically"),
       );
       return;
     }
-    list.replaceChildren(...entries.map((e, i) => row(e, i, global)));
+    list.replaceChildren(...entries.map((e, i) => row(e, i)));
   }
 
   const seg = (options, key) =>
@@ -92,13 +90,6 @@ export function RecordsScreen(ctx) {
 
   function render() {
     controls.replaceChildren(
-      seg(
-        [
-          ["local", "Local"],
-          ["global", "Global"],
-        ],
-        "scope",
-      ),
       h(
         "div",
         {
@@ -126,26 +117,7 @@ export function RecordsScreen(ctx) {
       ),
     );
     const key = view.len + ":" + view.mode + ":" + view.diff;
-    if (view.scope === "local") {
-      fill(topFor(meta.records, key), false);
-    } else {
-      list.replaceChildren(
-        h("div", { class: "subtitle" }, "summoning the global dead…"),
-      );
-      const seq = ++fetchSeq;
-      fetchBoard(key).then((entries) => {
-        if (seq !== fetchSeq) return; // superseded by a newer pick
-        if (!entries)
-          list.replaceChildren(
-            h(
-              "div",
-              { class: "subtitle" },
-              "couldn't reach the board — offline?",
-            ),
-          );
-        else fill(entries, true);
-      });
-    }
+    fill(topFor(meta.records, key));
   }
   render();
 
@@ -164,7 +136,7 @@ export function RecordsScreen(ctx) {
       "div",
       { class: "title", style: "font-size:clamp(1.4rem,5vw,2.2rem)" },
       icon("trophy"),
-      " Records",
+      " Personal Records",
     ),
     controls,
     list,

@@ -1,7 +1,7 @@
 // Caches are origin-scoped and SHARED with the 2D game's SW — only ever delete
 // caches under OUR prefix, or the two games wipe each other on every update.
 const CACHE_PREFIX = "emojisurvivors3d-";
-const CACHE = CACHE_PREFIX + "v13-security";
+const CACHE = CACHE_PREFIX + "v14-personal-records";
 const SHELL_FIRST_PARTY = [
   "./",
   "./Index.html",
@@ -146,7 +146,7 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
-  // The leaderboard API is live data — never cache-first or runtime-cache it.
+  // API responses are live data — never cache-first or runtime-cache it.
   if (url.pathname.includes("/Api/")) return;
 
   // Navigations: network-first so a fresh deploy's Index.html (and thus the new module

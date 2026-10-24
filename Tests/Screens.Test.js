@@ -17,6 +17,9 @@ function stubEl(tag) {
       this.children.push(c);
       return c;
     },
+    replaceChildren(...children) {
+      this.children = children;
+    },
     addEventListener() {},
     querySelector() {
       return null;
@@ -38,6 +41,8 @@ globalThis.Node =
   };
 
 const { MenuScreen } = await import("../Shared/UI/MenuScreen.js");
+const { RecordsScreen } = await import("../Shared/UI/RecordsScreen.js");
+const { postRun, fetchBoard } = await import("../Shared/Meta/OnlineBoard.js");
 const { CoopScreen, GuestPauseScreen } =
   await import("../Shared/UI/CoopScreen.js");
 const { makeMeta } = await import("../Shared/Meta/Meta.js");
@@ -84,6 +89,25 @@ const ctx = (mode) => ({
 });
 
 describe("Screens render headlessly", () => {
+  it("Records shows personal records without a public ranking option", () => {
+    const records = [{ runLength: 300, kills: 42, time: 120, level: 3, character: "knight" }];
+    const before = JSON.stringify(records);
+    const el = RecordsScreen({ meta: { records }, onBack: noop });
+    const text = (node) => [node.textContent || "", ...(node.children || []).map(text)].join(" ");
+    expect(text(el).includes("42 kills")).toBeTruthy();
+    expect(text(el).includes("Global")).toBe(false);
+    expect(JSON.stringify(records)).toBe(before);
+  });
+  it("retired online board compatibility exports do not send records", async () => {
+    const fetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => { calls++; throw new Error("unexpected request"); };
+    try {
+      await postRun({ kills: 42 }, "Player");
+      await fetchBoard("300:standard:normal");
+      expect(calls).toBe(0);
+    } finally { globalThis.fetch = fetch; }
+  });
   it("MenuScreen", () => {
     const el = MenuScreen({
       meta,

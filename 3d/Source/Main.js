@@ -17,7 +17,6 @@ import { mount } from "../../Shared/UI/Dom.js";
 import { MenuScreen } from "../../Shared/UI/MenuScreen.js";
 import { SelectScreen } from "../../Shared/UI/SelectScreen.js";
 import { RecordsScreen } from "../../Shared/UI/RecordsScreen.js";
-import { postRun } from "../../Shared/Meta/OnlineBoard.js";
 import { ConfigScreen } from "../../Shared/UI/ConfigScreen.js";
 import { PauseScreen } from "../../Shared/UI/PauseScreen.js";
 import { LevelUpScreen } from "../../Shared/UI/LevelUpScreen.js";
@@ -386,7 +385,7 @@ function resume() {
 function restart() {
   if (state) startRun(state.character.id, state.runLength, state.modifierSel);
 }
-// Snapshot the live run as a leaderboard entry. Standard quits are NOT recorded
+// Snapshot the live run as a personal record. Standard quits are NOT recorded
 // (abandoned-run noise); Endless quits are — quitting is Endless's cash-out.
 function runEntry(won, score) {
   return {
@@ -406,7 +405,6 @@ function runEntry(won, score) {
 
 function submitEntry(entry) {
   meta.recordEntry(entry);
-  if (!meta.tainted) postRun(entry, meta.playerName);
 }
 
 function guestQuit() {
