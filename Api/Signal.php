@@ -302,7 +302,7 @@ if ($a === "join") {
 
 if ($a === "confirm") {
     $peers = $body["peers"] ?? null;
-    if (!is_array($peers) || !array_is_list($peers) || count($peers) > MAX_GUESTS) out(["ok" => false, "error" => "peers"], 400);
+    if (!is_array($peers) || array_values($peers) !== $peers || count($peers) > MAX_GUESTS) out(["ok" => false, "error" => "peers"], 400);
     foreach ($peers as $id) {
         if (!is_string($id) || $id === "host" || !preg_match($idRe, $id)) out(["ok" => false, "error" => "peers"], 400);
     }

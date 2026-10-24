@@ -146,6 +146,7 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
+  // Read only this release's cache: the other game may hold older Shared modules.
   // API responses are live data — never cache-first or runtime-cache it.
   if (url.pathname.includes("/Api/")) return;
 
@@ -166,21 +167,21 @@ self.addEventListener("fetch", (e) => {
           // Server error (e.g. mid-deploy 503): prefer the cached shell over the
           // raw error page; only surface res when nothing is cached.
           return caches
-            .match(e.request)
-            .then((hit) => hit || caches.match("./Index.html"))
+            .match(e.request, { cacheName: CACHE })
+            .then((hit) => hit || caches.match("./Index.html", { cacheName: CACHE }))
             .then((hit) => hit || res);
         })
         .catch(() =>
           caches
-            .match(e.request)
-            .then((hit) => hit || caches.match("./Index.html")),
+            .match(e.request, { cacheName: CACHE })
+            .then((hit) => hit || caches.match("./Index.html", { cacheName: CACHE })),
         ),
     );
     return;
   }
 
   e.respondWith(
-    caches.match(e.request).then((hit) => {
+    caches.match(e.request, { cacheName: CACHE }).then((hit) => {
       if (hit) return hit;
       return fetch(e.request)
         .then((res) => {
@@ -199,7 +200,7 @@ self.addEventListener("fetch", (e) => {
         })
         .catch(() => {
           if (e.request.mode === "navigate")
-            return caches.match("./Index.html");
+            return caches.match("./Index.html", { cacheName: CACHE });
           return Response.error();
         });
     }),
